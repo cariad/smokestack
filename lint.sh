@@ -18,5 +18,5 @@ else
 fi
 
 flake8 .
-mypy naughtty
+mypy smokestack
 mypy tests
