@@ -28,7 +28,7 @@ jobs:
           file: coverage.xml
       - run: pipenv run ./build.sh
       - run: pip install dist/*
-      - run: ./test-cli.sh
+      # - run: ./test-cli.sh
       - run: if [[ -z "${CIRCLE_TAG}" ]]; then circleci-agent step halt; fi
       - run: pipenv run twine upload dist/*
 
