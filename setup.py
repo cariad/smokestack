@@ -39,6 +39,11 @@ setup(
     classifiers=classifiers,
     description="CloudFormation stacks, beautifully",
     include_package_data=True,
+    install_requires=[
+        "ansiscape >=1.0.0,   <2.0.0",
+        "boto3     >=1.18.59, <2.0.0",
+        "tabulate  >=0.8.9 ,  <1.0.0",
+    ],
     license="MIT",
     long_description=long_description,
     long_description_content_type="text/markdown",
