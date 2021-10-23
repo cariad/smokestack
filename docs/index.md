@@ -2,14 +2,6 @@
 
 `smokestack` is a Python package for deploying CloudFormation stacks, beautifully.
 
-## Installation
-
-`smokestack` requires Python 3.8 or later.
-
-```bash
-pip install smokestack
-```
-
 ## Feedback
 
 Please raise bugs, request features and ask questions at [github.com/cariad/smokestack/issues](https://github.com/cariad/smokestack/issues).

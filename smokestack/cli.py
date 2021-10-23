@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
+from dataclasses import dataclass
 from sys import argv, stdout
-from typing import IO, Dict, List, Type
+from typing import IO, Dict, List, Optional, Type
 
 from boto3.session import Session
 
@@ -9,19 +10,34 @@ from smokestack.stack import Stack
 from smokestack.version import get_version
 
 
-def invoke(
-    name: str,
-    version: str,
-    stacks: Dict[str, Type[Stack]],
-    args: List[str] = argv,
-    writer: IO[str] = stdout,
-) -> int:
-    """
-    Invokes the command line arguments `args` for the relevant stack in `stacks`
-    and writes any responses to `writer`.
+@dataclass
+class Host:
+    """Information about the host application."""
 
-    Returns the shell exit code.
-    """
+    name: str
+    """Host application name."""
+
+    version: str
+    """Host application version."""
+
+
+@dataclass
+class Request:
+    host: Host
+    """Host application."""
+
+    stacks: Dict[str, Type[Stack]]
+    """Deployable stacks."""
+
+    cli_args: Optional[List[str]] = None
+    """CLI arguments. Will determinate automatically by default."""
+
+    writer: IO[str] = stdout
+    """Output writer. Will use `stdout` by default."""
+
+
+def invoke(request: Request) -> int:
+    """Invokes `request` then returns the shell exit code."""
 
     parser = ArgumentParser(
         add_help=False,
@@ -48,7 +64,7 @@ def invoke(
 
     parser.add_argument(
         "--stack",
-        choices=stacks.keys(),
+        choices=request.stacks.keys(),
         help="stack",
     )
 
@@ -58,24 +74,27 @@ def invoke(
         help="prints version",
     )
 
-    ns = parser.parse_args(args[1:])
+    cli_args = argv if request.cli_args is None else request.cli_args
+
+    ns = parser.parse_args(cli_args[1:])
 
     if ns.help:
-        writer.write(parser.format_help())
+        request.writer.write(parser.format_help())
         return 0
 
     if ns.version:
-        writer.write(f"{name}/{version} smokestack/{get_version()}\n")
+        host_version = f"{request.host.name}/{request.host.version}"
+        request.writer.write(f"{host_version} smokestack/{get_version()}\n")
         return 0
 
-    if not ns.stack or ns.stack not in stacks:
-        writer.write(f'🔥 "--stack {{{",".join(stacks.keys())}}}" is required\n')
+    if not ns.stack or ns.stack not in request.stacks:
+        keys = ",".join(request.stacks.keys())
+        request.writer.write(f'🔥 "--stack {{{keys}}}" is required\n')
         return 1
 
-    stack = stacks[ns.stack](session=Session(), writer=writer)
+    stack = request.stacks[ns.stack](session=Session(), writer=request.writer)
 
     try:
-
         with stack.create_change_set() as change:
             if ns.preview:
                 change.preview()
@@ -83,7 +102,13 @@ def invoke(
                 change.execute()
 
     except SmokestackException as ex:
-        writer.write(f"🔥 {str(ex)}\n")
+        request.writer.write(f"🔥 {str(ex)}\n")
         return 2
 
     return 0
+
+
+def invoke_then_exit(request: Request) -> None:
+    """Invokes `request` then exits with the appropriate shell code."""
+
+    exit(invoke(request))
