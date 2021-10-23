@@ -150,7 +150,7 @@ class ChangeSet:
 
         t = tabulate(rows, headers="firstrow", tablefmt="plain")
 
-        self.writer.write("\n" + t + "\n")
+        self.writer.write("\n" + t + "\n\n")
 
     def _try_delete(self) -> None:
         if not self.change_set_id:
