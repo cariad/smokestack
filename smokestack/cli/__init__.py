@@ -49,7 +49,6 @@ def operate(stack: StackABC, values: OperationValues) -> None:
             change.execute()
 
 
-
 def try_invoke(request: Request) -> int:
     try:
         return invoke(request)

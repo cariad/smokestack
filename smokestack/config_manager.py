@@ -2,11 +2,11 @@ from os import environ
 from pathlib import Path
 from typing import IO, List, Optional, TypedDict
 
+from ansiscape import yellow
 from yaml import safe_load
 
 from smokestack.exceptions import SmokestackError
 from smokestack.models import OperationValues
-from ansiscape import yellow
 
 
 class CiRuleConfigurationValues(OperationValues):
@@ -53,12 +53,13 @@ class Configuration:
         path = cls.path()
 
         try:
-            writer.write(f"Loading configuration from {yellow(path.as_posix()).encoded}...\n")
+            writer.write(
+                f"Loading configuration from {yellow(path.as_posix()).encoded}...\n"
+            )
             with open(path, "r") as f:
                 cls._values = safe_load(f)
         except FileNotFoundError:
             raise ConfigurationError("file not found")
-
 
     @classmethod
     def operation(cls, writer: IO[str]) -> OperationValues:
@@ -75,7 +76,9 @@ class Configuration:
                 writer.write(f"Found a rule for branch {yellow(branch).encoded}!\n")
                 return rule
 
-        writer.write(f"Did not find a rule for branch {yellow(branch).encoded} so using default rule.\n")
+        writer.write(
+            f"Did not find a rule for branch {yellow(branch).encoded} so using default rule.\n"
+        )
         return ci["default"]
 
     @classmethod
