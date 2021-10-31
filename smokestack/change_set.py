@@ -19,7 +19,6 @@ class ChangeSet(ChangeSetABC):
         capabilities: Capabilities,
         body: str,
         change_type: ChangeType,
-        region: str,
         session: Session,
         stack_name: str,
         writer: IO[str],
@@ -30,11 +29,9 @@ class ChangeSet(ChangeSetABC):
         self.change_type = change_type
         self.client = session.client(
             "cloudformation",
-            region_name=region,
         )  # pyright: reportUnknownMemberType=false
         self.has_changes: Optional[bool] = None
         self.executed = False
-        self.region = region
         self.session = session
         self.stack_name = stack_name
         self.writer = writer
@@ -87,7 +84,7 @@ class ChangeSet(ChangeSetABC):
     def _try_create(self) -> None:
 
         self.writer.write(
-            f"Creating change set for stack {yellow(self.stack_name)} in {yellow(self.region)}...\n"
+            f"Creating change set for stack {yellow(self.stack_name)} in {yellow(self.session.region_name)}...\n"
         )
 
         try:

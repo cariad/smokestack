@@ -3,19 +3,17 @@ from pathlib import Path
 from sys import stdout
 from typing import IO, Union
 
-from boto3.session import Session
-
 from smokestack.abc import StackABC
 from smokestack.change_set import ChangeSet
 from smokestack.types import Capabilities, ChangeType
 
 
 class Stack(StackABC):
-    def __init__(self, session: Session, writer: IO[str] = stdout) -> None:
-        super().__init__(session=session, writer=writer)
-        self.client = session.client(
+    def __init__(self, writer: IO[str] = stdout) -> None:
+        super().__init__(writer=writer)
+
+        self.client = self.session.client(
             "cloudformation",
-            region_name=self.region,
         )  # pyright: reportUnknownMemberType=false
 
     @abstractproperty
@@ -41,7 +39,6 @@ class Stack(StackABC):
             capabilities=self.capabilities,
             body=body,
             change_type=self.change_type,
-            region=self.region,
             session=self.session,
             stack_name=self.name,
             writer=self.writer,
@@ -58,7 +55,3 @@ class Stack(StackABC):
     @abstractproperty
     def name(self) -> str:
         """Gets the stack name."""
-
-    @abstractproperty
-    def region(self) -> str:
-        """Gets the AWS region to deploy into."""

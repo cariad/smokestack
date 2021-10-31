@@ -1,14 +1,16 @@
 from argparse import ArgumentParser
 from sys import argv
-from typing import Union
+from typing import IO, List, Optional, Union
 
 from smokestack.config_manager import make_operation_from_config
-from smokestack.models import Request, StackOperation
+from smokestack.models import StackOperation
 from smokestack.models.operation import OperationValues
 from smokestack.version import get_version
 
 
-def make_operation_from_cli(request: Request) -> Union[int, StackOperation]:
+def make_operation_from_cli(
+    host: str, stack_keys: List[str], writer: IO[str], args: Optional[List[str]] = None
+) -> Union[int, StackOperation]:
     parser = ArgumentParser(
         add_help=False,
         description="Deploys CloudFormation stacks, beautifully.",
@@ -40,7 +42,7 @@ def make_operation_from_cli(request: Request) -> Union[int, StackOperation]:
 
     parser.add_argument(
         "--stack",
-        choices=request.stacks.keys(),
+        choices=stack_keys,
         help="stack",
     )
 
@@ -50,25 +52,24 @@ def make_operation_from_cli(request: Request) -> Union[int, StackOperation]:
         help="prints version",
     )
 
-    args = argv if request.cli_args is None else request.cli_args
+    args = argv if args is None else args
     parsed = parser.parse_args(args[1:])
 
     if parsed.help:
-        request.writer.write(parser.format_help())
+        writer.write(parser.format_help())
         return 0
 
     if parsed.version:
-        host_version = f"{request.host.name}/{request.host.version}"
-        request.writer.write(f"{host_version} smokestack/{get_version()}\n")
+        writer.write(f"{host} smokestack/{get_version()}\n")
         return 0
 
-    if not parsed.stack or parsed.stack not in request.stacks:
-        keys = ",".join(request.stacks.keys())
-        request.writer.write(f'🔥 "--stack {{{keys}}}" is required\n')
+    if not parsed.stack or parsed.stack not in stack_keys:
+        keys = ",".join(stack_keys)
+        writer.write(f'🔥 "--stack {{{keys}}}" is required\n')
         return 1
 
     op = (
-        make_operation_from_config(writer=request.writer)
+        make_operation_from_config(writer=writer)
         if parsed.ci
         else OperationValues(deploy=parsed.deploy, preview=parsed.preview)
     )
