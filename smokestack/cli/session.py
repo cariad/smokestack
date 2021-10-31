@@ -10,11 +10,14 @@ from smokestack.models import Operation, PreviewOptions
 
 class Session:
     def __init__(
-        self, host_name: str, host_version: str, writer: Optional[IO[str]] = None
+        self,
+        app_name: str,
+        app_version: str,
+        writer: Optional[IO[str]] = None,
     ) -> None:
         self.writer = writer or stdout
-        Configuration.load(self.writer)
-        self._host = f"{host_name}/{host_version}"
+        Configuration.load()
+        self._host = f"{app_name}/{app_version}"
         self._stacks: Dict[str, Type[StackABC]] = {}
 
     def _invoke(self) -> int:

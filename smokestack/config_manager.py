@@ -49,14 +49,9 @@ class Configuration:
         return env_name
 
     @classmethod
-    def load(cls, writer: IO[str]) -> None:
-        path = cls.path()
-
+    def load(cls) -> None:
         try:
-            writer.write(
-                f"Loading configuration from {yellow(path.as_posix()).encoded}...\n"
-            )
-            with open(path, "r") as f:
+            with open(cls.path(), "r") as f:
                 cls._values = safe_load(f)
         except FileNotFoundError:
             raise ConfigurationError("file not found")
