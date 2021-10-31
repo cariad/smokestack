@@ -1,17 +1,19 @@
 from time import time_ns
 from typing import IO, Any, Optional
 
-from ansiscape import green, heavy, yellow
+from ansiscape import heavy, yellow
 from boto3.session import Session
 from botocore.exceptions import WaiterError
-from tabulate import tabulate
+from stackdiff import StackDiff
 
+from smokestack.abc import ChangeSetABC
 from smokestack.aws import endeavor
-from smokestack.exceptions import ChangeSetCreationException
+from smokestack.exceptions import ChangeSetCreationError, SmokestackError
+from smokestack.models import PreviewOptions
 from smokestack.types import Capabilities, ChangeType
 
 
-class ChangeSet:
+class ChangeSet(ChangeSetABC):
     def __init__(
         self,
         capabilities: Capabilities,
@@ -33,8 +35,11 @@ class ChangeSet:
         self.has_changes: Optional[bool] = None
         self.executed = False
         self.region = region
+        self.session = session
         self.stack_name = stack_name
         self.writer = writer
+
+        self._stack_diff: Optional[StackDiff] = None
 
     def __enter__(self) -> "ChangeSet":
         endeavor(self._try_create)
@@ -96,61 +101,18 @@ class ChangeSet:
 
         except self.client.exceptions.InsufficientCapabilitiesException as ex:
             error = ex.response.get("Error", {})
-            raise ChangeSetCreationException(
+            raise ChangeSetCreationError(
                 failure=error.get("Message", "insufficient capabilities"),
                 stack_name=self.stack_name,
             )
 
+        except self.client.exceptions.ClientError as ex:
+            raise ChangeSetCreationError(
+                failure=str(ex),
+                stack_name=self.stack_name,
+            )
+
         self.change_set_id = response["Id"]
-
-    def _try_describe(self) -> None:
-        if not self.change_set_id:
-            raise Exception()
-
-        response = self.client.describe_change_set(ChangeSetName=self.change_set_id)
-
-        rows = [
-            [
-                heavy("Name").encoded,
-                heavy("Type").encoded,
-                heavy("Action").encoded,
-                heavy("Replace?").encoded,
-                heavy("Detail").encoded,
-            ]
-        ]
-
-        for change in response["Changes"]:
-            print(change)
-            if resource_change := change.get("ResourceChange", None):
-                print(resource_change)
-
-                if resource_change["Action"] == "Add":
-                    color = green
-                else:
-                    color = yellow
-
-                rows.append(
-                    [
-                        color(resource_change["LogicalResourceId"]).encoded,
-                        color(resource_change["ResourceType"]).encoded,
-                        color(resource_change["Action"]).encoded,
-                        color(resource_change.get("Replacement", "")).encoded,
-                        color(
-                            "\n".join(
-                                [
-                                    detail["Target"]["Name"]
-                                    for detail in resource_change["Details"]
-                                ]
-                            )
-                        ).encoded,
-                    ]
-                )
-            else:
-                print(f"⚠️ no resource change: {change}")
-
-        t = tabulate(rows, headers="firstrow", tablefmt="plain")
-
-        self.writer.write("\n" + t + "\n\n")
 
     def _try_delete(self) -> None:
         if not self.change_set_id:
@@ -179,8 +141,29 @@ class ChangeSet:
                         return
             raise
 
-    def preview(self) -> None:
+    def preview(self, options: Optional[PreviewOptions] = None) -> None:
         if not self.has_changes:
             self.writer.write("There are no changes to apply.\n")
             return
-        endeavor(self._try_describe)
+
+        options = options or PreviewOptions()
+
+        if options.empty_line_before_difference:
+            self.writer.write("\n")
+
+        self.writer.write(f"{heavy('Stack changes:').encoded} \n")
+        self.visualizer.render_differences(self.writer)
+        self.writer.write("\n")
+        self.visualizer.render_changes(self.writer)
+
+    @property
+    def visualizer(self) -> StackDiff:
+        if not self._stack_diff:
+            if self.change_set_id is None:
+                raise SmokestackError("Cannot visualise changes before creation")
+            self._stack_diff = StackDiff(
+                change=self.change_set_id,
+                stack=self.stack_name,
+                session=self.session,
+            )
+        return self._stack_diff

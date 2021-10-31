@@ -1,0 +1,2 @@
+class SmokestackError(Exception):
+    pass

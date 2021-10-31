@@ -1,22 +1,22 @@
-from abc import ABC, abstractproperty
+from abc import abstractproperty
 from pathlib import Path
 from sys import stdout
 from typing import IO, Union
 
 from boto3.session import Session
 
+from smokestack.abc import StackABC
 from smokestack.change_set import ChangeSet
 from smokestack.types import Capabilities, ChangeType
 
 
-class Stack(ABC):
+class Stack(StackABC):
     def __init__(self, session: Session, writer: IO[str] = stdout) -> None:
+        super().__init__(session=session, writer=writer)
         self.client = session.client(
             "cloudformation",
             region_name=self.region,
         )  # pyright: reportUnknownMemberType=false
-        self.session = session
-        self.writer = writer
 
     @abstractproperty
     def body(self) -> Union[str, Path]:
