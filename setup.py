@@ -44,6 +44,7 @@ setup(
         "boto3     >=1.18.59, <2.0",
         "pyyaml    >=6.0,     <7.0",
         "stackdiff >=1.0,     <2.0",
+        "stackwhy  >=1.0.1,   <2.0",
         "tabulate  >=0.8.9 ,  <1.0",
     ],
     license="MIT",

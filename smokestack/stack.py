@@ -40,7 +40,7 @@ class Stack(StackABC):
             body=body,
             change_type=self.change_type,
             session=self.session,
-            stack_name=self.name,
+            stack=self.name,
             writer=self.writer,
         )
 

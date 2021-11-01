@@ -8,6 +8,7 @@ ansiscape = "~=1.0"
 boto3 = "~=1.18"
 pyyaml = "~=6.0"
 stackdiff = "~=1.1"
+stackwhy = "~=1.0.1"
 
 [dev-packages]
 black = "==21.9b0"
