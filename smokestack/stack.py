@@ -3,6 +3,8 @@ from pathlib import Path
 from sys import stdout
 from typing import IO, Union
 
+from boto3.session import Session
+
 from smokestack.abc import StackABC
 from smokestack.change_set import ChangeSet
 from smokestack.types import Capabilities, ChangeType
@@ -10,7 +12,8 @@ from smokestack.types import Capabilities, ChangeType
 
 class Stack(StackABC):
     def __init__(self, writer: IO[str] = stdout) -> None:
-        super().__init__(writer=writer)
+        self.session = Session(region_name=self.region)
+        self.writer = writer
 
         self.client = self.session.client(
             "cloudformation",
@@ -36,12 +39,14 @@ class Stack(StackABC):
             body = self.body
 
         return ChangeSet(
-            capabilities=self.capabilities,
-            body=body,
-            change_type=self.change_type,
-            session=self.session,
-            stack=self.name,
-            writer=self.writer,
+            {
+                "capabilities": self.capabilities,
+                "body": body,
+                "change_type": self.change_type,
+                "session": self.session,
+                "stack_name": self.name,
+                "writer": self.writer,
+            }
         )
 
     @property
