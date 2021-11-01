@@ -3,6 +3,7 @@ from pathlib import Path
 from sys import stdout
 from typing import IO, Union
 
+from ansiscape import yellow
 from boto3.session import Session
 
 from smokestack.abc import StackABC
@@ -18,6 +19,9 @@ class Stack(StackABC):
         self.client = self.session.client(
             "cloudformation",
         )  # pyright: reportUnknownMemberType=false
+        self.writer.write(
+            f"Operating on stack {yellow(self.name)} in {yellow(self.region)}.\n"
+        )
 
     @abstractproperty
     def body(self) -> Union[str, Path]:

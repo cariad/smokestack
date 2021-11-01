@@ -1,7 +1,7 @@
 from time import time_ns
 from typing import IO, Any, Literal, Optional, TypedDict, Union
 
-from ansiscape import heavy, yellow
+from ansiscape import heavy
 from boto3.session import Session
 from botocore.exceptions import WaiterError
 from stackdiff import StackDiff
@@ -101,8 +101,7 @@ class ChangeSet(ChangeSetABC):
         pass
 
     def _try_create(self) -> None:
-
-        self.writer.write(f"Creating change set for stack {yellow(self.stack)}...\n")
+        self.writer.write("Creating change set...\n")
 
         try:
             response = self.client.create_change_set(
