@@ -77,7 +77,6 @@ class ChangeSet(ChangeSetABC):
 
         self.writer.write("Executing change set...\n")
         self.client.execute_change_set(ChangeSetName=self.change_set_arn)
-        self.writer.write("Executed successfully! 🎉\n")
 
     @property
     def stack_arn(self) -> Optional[str]:
@@ -96,7 +95,7 @@ class ChangeSet(ChangeSetABC):
 
         waiter.wait(StackName=self.stack)
         self.executed = True
-        self.writer.write("Change executed successfully! 🎉\n")
+        self.writer.write("Executed successfully! 🎉\n")
 
     def make_capabilities(self) -> None:
         pass
