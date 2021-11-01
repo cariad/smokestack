@@ -77,6 +77,7 @@ class ChangeSet(ChangeSetABC):
 
         self.writer.write("Executing change set...\n")
         self.client.execute_change_set(ChangeSetName=self.change_set_arn)
+        self.writer.write("Executed successfully! 🎉\n")
 
     @property
     def stack_arn(self) -> Optional[str]:
@@ -187,7 +188,6 @@ class ChangeSet(ChangeSetABC):
                 session=self.session,
             )
         return self._stack_diff
-        endeavor(self._try_describe)
 
     @property
     def stack_waiter_type(

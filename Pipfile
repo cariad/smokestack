@@ -15,11 +15,13 @@ black = "==21.9b0"
 boto3-stubs = {extras = ["cloudformation"], version = "*"}
 flake8 = "*"
 isort = "*"
+mock = "*"
 mypy = "*"
 pytest = "*"
 pytest-cov = "*"
 shellcheck-py = "*"
 twine = "*"
+types-mock = "*"
 types-pyyaml = "*"
 yamllint = "*"
 
