@@ -1,7 +1,7 @@
 from time import time_ns
-from typing import IO, Any, Optional
+from typing import IO, Any, Literal, Optional, TypedDict, Union
 
-from ansiscape import heavy, yellow
+from ansiscape import heavy
 from boto3.session import Session
 from botocore.exceptions import WaiterError
 from stackdiff import StackDiff
@@ -18,35 +18,37 @@ from smokestack.models import PreviewOptions
 from smokestack.types import Capabilities, ChangeType
 
 
+class ChangeSetArgs(TypedDict):
+    capabilities: Capabilities
+    body: str
+    change_type: ChangeType
+    session: Session
+    stack_name: str
+    writer: IO[str]
+
+
 class ChangeSet(ChangeSetABC):
     """
     Arguments:
         stack: Stack ARN, ID or name
     """
 
-    def __init__(
-        self,
-        capabilities: Capabilities,
-        body: str,
-        change_type: ChangeType,
-        session: Session,
-        stack: str,
-        writer: IO[str],
-    ) -> None:
-        self.body = body
-        self.capabilities = capabilities
-        self.change_set_arn: Optional[str] = None
-        self.change_type = change_type
-        self.client = session.client(
-            "cloudformation",
-        )  # pyright: reportUnknownMemberType=false
+    def __init__(self, args: ChangeSetArgs) -> None:
+        self.body = args["body"]
+        self.capabilities = args["capabilities"]
+        self.change_set_id: Optional[str] = None
+        self.change_type = args["change_type"]
         self.has_changes: Optional[bool] = None
         self.executed = False
-        self.session = session
-        self.stack = stack
-        self.writer = writer
+        self.session = args["session"]
+        self.stack = args["stack_name"]
+        self.writer = args["writer"]
 
-        self._stack_arn = stack if self.is_arn(stack) else None
+        self.client = self.session.client(
+            "cloudformation",
+        )  # pyright: reportUnknownMemberType=false
+
+        self._stack_arn = self.stack if self.is_arn(self.stack) else None
         self._stack_diff: Optional[StackDiff] = None
 
     @staticmethod
@@ -89,26 +91,17 @@ class ChangeSet(ChangeSetABC):
         raise ChangeSetExecutionError(stack_name=self.stack)
 
     def _try_wait_for_execute(self) -> None:
-        if not self.change_set_arn:
-            raise Exception()
-
-        waiter = (
-            self.client.get_waiter("stack_update_complete")
-            if self.change_type == "UPDATE"
-            else self.client.get_waiter("stack_create_complete")
-        )
+        waiter = self.client.get_waiter(self.stack_waiter_type)
 
         waiter.wait(StackName=self.stack)
         self.executed = True
+        self.writer.write("Executed successfully! 🎉\n")
 
     def make_capabilities(self) -> None:
         pass
 
     def _try_create(self) -> None:
-
-        self.writer.write(
-            f"Creating change set for stack {yellow(self.stack)} in {yellow(self.session.region_name)}...\n"
-        )
+        self.writer.write("Creating change set...\n")
 
         try:
             response = self.client.create_change_set(
@@ -193,3 +186,13 @@ class ChangeSet(ChangeSetABC):
                 session=self.session,
             )
         return self._stack_diff
+
+    @property
+    def stack_waiter_type(
+        self,
+    ) -> Union[Literal["stack_update_complete"], Literal["stack_create_complete"]]:
+        return (
+            "stack_update_complete"
+            if self.change_type == "UPDATE"
+            else "stack_create_complete"
+        )
