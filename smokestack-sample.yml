@@ -1,0 +1,25 @@
+# The name of environment variable that holds the current branch name.
+#
+# It's okay if this is set only in CI and not locally.
+#
+# Examples:
+#    CircleCI:  "CIRCLE_BRANCH"
+#    GitLab CI: "CI_COMMIT_BRANCH"
+branch_name_env: CIRCLE_BRANCH
+
+# Rules when running with the "--ci" flag:
+ci:
+  rules:
+    # When running on the "main" branch....
+    - branch: main
+      # ...do preview:
+      preview: true
+      # ...and do deploy:
+      deploy: true
+
+  # When none of the rules above apply:
+  default:
+    # ...do preview:
+    preview: true
+    # ...but do not deploy:
+    deploy: false

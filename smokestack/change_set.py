@@ -1,40 +1,57 @@
 from time import time_ns
 from typing import IO, Any, Optional
 
-from ansiscape import green, heavy, yellow
+from ansiscape import heavy, yellow
 from boto3.session import Session
 from botocore.exceptions import WaiterError
-from tabulate import tabulate
+from stackdiff import StackDiff
+from stackwhy import StackWhy
 
+from smokestack.abc import ChangeSetABC
 from smokestack.aws import endeavor
-from smokestack.exceptions import ChangeSetCreationException
+from smokestack.exceptions import (
+    ChangeSetCreationError,
+    ChangeSetExecutionError,
+    SmokestackError,
+)
+from smokestack.models import PreviewOptions
 from smokestack.types import Capabilities, ChangeType
 
 
-class ChangeSet:
+class ChangeSet(ChangeSetABC):
+    """
+    Arguments:
+        stack: Stack ARN, ID or name
+    """
+
     def __init__(
         self,
         capabilities: Capabilities,
         body: str,
         change_type: ChangeType,
-        region: str,
         session: Session,
-        stack_name: str,
+        stack: str,
         writer: IO[str],
     ) -> None:
         self.body = body
         self.capabilities = capabilities
-        self.change_set_id: Optional[str] = None
+        self.change_set_arn: Optional[str] = None
         self.change_type = change_type
         self.client = session.client(
             "cloudformation",
-            region_name=region,
         )  # pyright: reportUnknownMemberType=false
         self.has_changes: Optional[bool] = None
         self.executed = False
-        self.region = region
-        self.stack_name = stack_name
+        self.session = session
+        self.stack = stack
         self.writer = writer
+
+        self._stack_arn = stack if self.is_arn(stack) else None
+        self._stack_diff: Optional[StackDiff] = None
+
+    @staticmethod
+    def is_arn(value: str) -> bool:
+        return value.startswith("arn:")
 
     def __enter__(self) -> "ChangeSet":
         endeavor(self._try_create)
@@ -49,22 +66,30 @@ class ChangeSet:
         if not self.has_changes:
             return
 
-        endeavor(self._try_execute, self._handle_execution_failure)
-        endeavor(self._try_wait_for_execute)
+        endeavor(self._try_execute)
+        endeavor(self._try_wait_for_execute, self._handle_execution_failure)
 
     def _try_execute(self) -> None:
-        if not self.change_set_id:
+        if not self.change_set_arn:
             raise Exception()
 
         self.writer.write("Executing change set...\n")
-        self.client.execute_change_set(ChangeSetName=self.change_set_id)
+        self.client.execute_change_set(ChangeSetName=self.change_set_arn)
+
+    @property
+    def stack_arn(self) -> Optional[str]:
+        return self._stack_arn
 
     def _handle_execution_failure(self) -> None:
-        response = self.client.describe_stack_events(StackName=self.stack_name)
-        self.writer.write("\n\n" + str(response) + "\n\n")
+        # Prefer the ARN if we have it:
+        stack = self.stack_arn or self.stack
+        self.writer.write("\n")
+        sw = StackWhy(stack=stack, session=self.session)
+        sw.render(self.writer)
+        raise ChangeSetExecutionError(stack_name=self.stack)
 
     def _try_wait_for_execute(self) -> None:
-        if not self.change_set_id:
+        if not self.change_set_arn:
             raise Exception()
 
         waiter = (
@@ -73,7 +98,7 @@ class ChangeSet:
             else self.client.get_waiter("stack_create_complete")
         )
 
-        waiter.wait(StackName=self.stack_name)
+        waiter.wait(StackName=self.stack)
         self.executed = True
 
     def make_capabilities(self) -> None:
@@ -82,12 +107,12 @@ class ChangeSet:
     def _try_create(self) -> None:
 
         self.writer.write(
-            f"Creating change set for stack {yellow(self.stack_name)} in {yellow(self.region)}...\n"
+            f"Creating change set for stack {yellow(self.stack)} in {yellow(self.session.region_name)}...\n"
         )
 
         try:
             response = self.client.create_change_set(
-                StackName=self.stack_name,
+                StackName=self.stack,
                 Capabilities=self.capabilities,
                 ChangeSetName=f"t{time_ns()}",
                 ChangeSetType=self.change_type,
@@ -96,80 +121,43 @@ class ChangeSet:
 
         except self.client.exceptions.InsufficientCapabilitiesException as ex:
             error = ex.response.get("Error", {})
-            raise ChangeSetCreationException(
+            raise ChangeSetCreationError(
                 failure=error.get("Message", "insufficient capabilities"),
-                stack_name=self.stack_name,
+                stack_name=self.stack,
             )
 
-        self.change_set_id = response["Id"]
+        except self.client.exceptions.ClientError as ex:
+            raise ChangeSetCreationError(
+                failure=str(ex),
+                stack_name=self.stack,
+            )
 
-    def _try_describe(self) -> None:
-        if not self.change_set_id:
-            raise Exception()
-
-        response = self.client.describe_change_set(ChangeSetName=self.change_set_id)
-
-        rows = [
-            [
-                heavy("Name").encoded,
-                heavy("Type").encoded,
-                heavy("Action").encoded,
-                heavy("Replace?").encoded,
-                heavy("Detail").encoded,
-            ]
-        ]
-
-        for change in response["Changes"]:
-            print(change)
-            if resource_change := change.get("ResourceChange", None):
-                print(resource_change)
-
-                if resource_change["Action"] == "Add":
-                    color = green
-                else:
-                    color = yellow
-
-                rows.append(
-                    [
-                        color(resource_change["LogicalResourceId"]).encoded,
-                        color(resource_change["ResourceType"]).encoded,
-                        color(resource_change["Action"]).encoded,
-                        color(resource_change.get("Replacement", "")).encoded,
-                        color(
-                            "\n".join(
-                                [
-                                    detail["Target"]["Name"]
-                                    for detail in resource_change["Details"]
-                                ]
-                            )
-                        ).encoded,
-                    ]
-                )
-            else:
-                print(f"⚠️ no resource change: {change}")
-
-        t = tabulate(rows, headers="firstrow", tablefmt="plain")
-
-        self.writer.write("\n" + t + "\n")
+        self.change_set_arn = response["Id"]
+        self._stack_arn = response["StackId"]
 
     def _try_delete(self) -> None:
-        if not self.change_set_id:
+        if not self.change_set_arn:
             # The change set wasn't created, so there's nothing to delete:
             return
 
         if self.change_type == "CREATE":
-            self.client.delete_stack(StackName=self.stack_name)
-        else:
-            self.client.delete_change_set(ChangeSetName=self.change_set_id)
+            self.client.delete_stack(StackName=self.stack)
+            return
+
+        try:
+            self.client.delete_change_set(ChangeSetName=self.change_set_arn)
+        except self.client.exceptions.InvalidChangeSetStatusException:
+            # We can't delete failed change sets, and that's okay.
+            pass
 
     def _try_wait_for_creation(self) -> None:
-        if not self.change_set_id:
+        if not self.change_set_arn:
             raise Exception()
 
         waiter = self.client.get_waiter("change_set_create_complete")
 
         try:
-            waiter.wait(ChangeSetName=self.change_set_id)
+            waiter.wait(ChangeSetName=self.change_set_arn)
             self.has_changes = True
         except WaiterError as ex:
             if ex.last_response:
@@ -179,8 +167,29 @@ class ChangeSet:
                         return
             raise
 
-    def preview(self) -> None:
+    def preview(self, options: Optional[PreviewOptions] = None) -> None:
         if not self.has_changes:
             self.writer.write("There are no changes to apply.\n")
             return
-        endeavor(self._try_describe)
+
+        options = options or PreviewOptions()
+
+        if options.empty_line_before_difference:
+            self.writer.write("\n")
+
+        self.writer.write(f"{heavy('Stack changes:').encoded} \n")
+        self.visualizer.render_differences(self.writer)
+        self.writer.write("\n")
+        self.visualizer.render_changes(self.writer)
+
+    @property
+    def visualizer(self) -> StackDiff:
+        if not self._stack_diff:
+            if self.change_set_arn is None:
+                raise SmokestackError("Cannot visualise changes before creation")
+            self._stack_diff = StackDiff(
+                change=self.change_set_arn,
+                stack=self.stack,
+                session=self.session,
+            )
+        return self._stack_diff
