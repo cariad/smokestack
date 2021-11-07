@@ -12,7 +12,7 @@ stackwhy = "~=1.0.1"
 
 [dev-packages]
 black = "==21.9b0"
-boto3-stubs = {extras = ["cloudformation"], version = "*"}
+boto3-stubs = {extras = ["cloudformation", "ssm"], version = "*"}
 flake8 = "*"
 isort = "*"
 mock = "*"
