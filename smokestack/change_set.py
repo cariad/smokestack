@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from time import time_ns
 from typing import IO, Any, Literal, Optional, TypedDict, Union
 
@@ -15,15 +16,24 @@ from smokestack.exceptions import (
     SmokestackError,
 )
 from smokestack.models import PreviewOptions
-from smokestack.types import Capabilities, ChangeType
+from smokestack.types import Capabilities, ChangeType, Parameters
 
 
-class ChangeSetArgs(TypedDict):
+class CloudFormationParameter(TypedDict, total=False):
+    ParameterKey: str
+    ParameterValue: str
+    UsePreviousValue: bool
+    ResolvedValue: Optional[str]
+
+
+@dataclass
+class ChangeSetArgs:
     capabilities: Capabilities
     body: str
     change_type: ChangeType
+    parameters: Parameters
     session: Session
-    stack_name: str
+    stack: str
     writer: IO[str]
 
 
@@ -34,21 +44,22 @@ class ChangeSet(ChangeSetABC):
     """
 
     def __init__(self, args: ChangeSetArgs) -> None:
-        self.body = args["body"]
-        self.capabilities = args["capabilities"]
+        self.args = args
+        # self.capabilities = args["capabilities"]
         self.change_set_id: Optional[str] = None
-        self.change_type = args["change_type"]
+        # self.change_type = args["change_type"]
         self.has_changes: Optional[bool] = None
         self.executed = False
-        self.session = args["session"]
-        self.stack = args["stack_name"]
-        self.writer = args["writer"]
+        # self.parameters = args["parameters"]
+        # self.session = args["session"]
+        # self.stack = args["stack_name"]
+        # self.writer = args["writer"]
 
-        self.client = self.session.client(
+        self.client = self.args.session.client(
             "cloudformation",
         )  # pyright: reportUnknownMemberType=false
 
-        self._stack_arn = self.stack if self.is_arn(self.stack) else None
+        self._stack_arn = self.args.stack if self.is_arn(self.args.stack) else None
         self._stack_diff: Optional[StackDiff] = None
 
     @staticmethod
@@ -75,7 +86,7 @@ class ChangeSet(ChangeSetABC):
         if not self.change_set_arn:
             raise Exception()
 
-        self.writer.write("Executing change set...\n")
+        self.args.writer.write("Executing change set...\n")
         self.client.execute_change_set(ChangeSetName=self.change_set_arn)
 
     @property
@@ -84,45 +95,52 @@ class ChangeSet(ChangeSetABC):
 
     def _handle_execution_failure(self) -> None:
         # Prefer the ARN if we have it:
-        stack = self.stack_arn or self.stack
-        self.writer.write("\n")
-        sw = StackWhy(stack=stack, session=self.session)
-        sw.render(self.writer)
-        raise ChangeSetExecutionError(stack_name=self.stack)
+        stack = self.stack_arn or self.args.stack
+        self.args.writer.write("\n")
+        sw = StackWhy(stack=stack, session=self.args.session)
+        sw.render(self.args.writer)
+        raise ChangeSetExecutionError(stack_name=self.args.stack)
 
     def _try_wait_for_execute(self) -> None:
         waiter = self.client.get_waiter(self.stack_waiter_type)
 
-        waiter.wait(StackName=self.stack)
+        waiter.wait(StackName=self.args.stack)
         self.executed = True
-        self.writer.write("Executed successfully! 🎉\n")
+        self.args.writer.write("Executed successfully! 🎉\n")
 
     def make_capabilities(self) -> None:
         pass
 
     def _try_create(self) -> None:
-        self.writer.write("Creating change set...\n")
+        self.args.writer.write("Creating change set...\n")
 
         try:
             response = self.client.create_change_set(
-                StackName=self.stack,
-                Capabilities=self.capabilities,
+                StackName=self.args.stack,
+                Capabilities=self.args.capabilities,
                 ChangeSetName=f"t{time_ns()}",
-                ChangeSetType=self.change_type,
-                TemplateBody=self.body,
+                ChangeSetType=self.args.change_type,
+                Parameters=[
+                    {
+                        "ParameterKey": k,
+                        "ParameterValue": self.args.parameters[k],
+                    }
+                    for k in self.args.parameters
+                ],
+                TemplateBody=self.args.body,
             )
 
         except self.client.exceptions.InsufficientCapabilitiesException as ex:
             error = ex.response.get("Error", {})
             raise ChangeSetCreationError(
                 failure=error.get("Message", "insufficient capabilities"),
-                stack_name=self.stack,
+                stack_name=self.args.stack,
             )
 
         except self.client.exceptions.ClientError as ex:
             raise ChangeSetCreationError(
                 failure=str(ex),
-                stack_name=self.stack,
+                stack_name=self.args.stack,
             )
 
         self.change_set_arn = response["Id"]
@@ -133,8 +151,8 @@ class ChangeSet(ChangeSetABC):
             # The change set wasn't created, so there's nothing to delete:
             return
 
-        if self.change_type == "CREATE":
-            self.client.delete_stack(StackName=self.stack)
+        if self.args.change_type == "CREATE":
+            self.client.delete_stack(StackName=self.args.stack)
             return
 
         try:
@@ -162,18 +180,18 @@ class ChangeSet(ChangeSetABC):
 
     def preview(self, options: Optional[PreviewOptions] = None) -> None:
         if not self.has_changes:
-            self.writer.write("There are no changes to apply.\n")
+            self.args.writer.write("There are no changes to apply.\n")
             return
 
         options = options or PreviewOptions()
 
         if options.empty_line_before_difference:
-            self.writer.write("\n")
+            self.args.writer.write("\n")
 
-        self.writer.write(f"{heavy('Stack changes:').encoded} \n")
-        self.visualizer.render_differences(self.writer)
-        self.writer.write("\n")
-        self.visualizer.render_changes(self.writer)
+        self.args.writer.write(f"{heavy('Stack changes:').encoded} \n")
+        self.visualizer.render_differences(self.args.writer)
+        self.args.writer.write("\n")
+        self.visualizer.render_changes(self.args.writer)
 
     @property
     def visualizer(self) -> StackDiff:
@@ -182,8 +200,8 @@ class ChangeSet(ChangeSetABC):
                 raise SmokestackError("Cannot visualise changes before creation")
             self._stack_diff = StackDiff(
                 change=self.change_set_arn,
-                stack=self.stack,
-                session=self.session,
+                stack=self.args.stack,
+                session=self.args.session,
             )
         return self._stack_diff
 
@@ -193,6 +211,6 @@ class ChangeSet(ChangeSetABC):
     ) -> Union[Literal["stack_update_complete"], Literal["stack_create_complete"]]:
         return (
             "stack_update_complete"
-            if self.change_type == "UPDATE"
+            if self.args.change_type == "UPDATE"
             else "stack_create_complete"
         )

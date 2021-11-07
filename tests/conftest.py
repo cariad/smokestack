@@ -18,11 +18,12 @@ def writer() -> StringIO:
 
 @fixture
 def change_set_args(session: Mock, writer: StringIO) -> ChangeSetArgs:
-    return {
-        "capabilities": [],
-        "body": "",
-        "change_type": "CREATE",
-        "session": session,
-        "stack_name": "",
-        "writer": writer,
-    }
+    return ChangeSetArgs(
+        capabilities=[],
+        body="",
+        change_type="CREATE",
+        parameters={},
+        session=session,
+        stack="",
+        writer=writer,
+    )

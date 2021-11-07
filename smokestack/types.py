@@ -1,4 +1,4 @@
-from typing import Literal, Sequence
+from typing import Dict, Literal, Sequence
 
 ChangeType = Literal[
     "CREATE",
@@ -13,3 +13,5 @@ Capability = Literal[
 ]
 
 Capabilities = Sequence[Capability]
+
+Parameters = Dict[str, str]
