@@ -1,14 +1,15 @@
 from abc import abstractproperty
 from pathlib import Path
 from sys import stdout
-from typing import IO, Union
+from typing import IO, List, Union
 
 from ansiscape import yellow
 from boto3.session import Session
 
 from smokestack.abc import StackABC
 from smokestack.change_set import ChangeSet, ChangeSetArgs
-from smokestack.types import Capabilities, ChangeType, Parameters
+from smokestack.models.stack_parameter import StackParameter
+from smokestack.types import Capabilities, ChangeType
 
 
 class Stack(StackABC):
@@ -67,5 +68,5 @@ class Stack(StackABC):
         """Gets the stack name."""
 
     @property
-    def parameters(self) -> Parameters:
-        return {}
+    def parameters(self) -> List[StackParameter]:
+        return []

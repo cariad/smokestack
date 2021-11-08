@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from time import time_ns
-from typing import IO, Any, Literal, Optional, TypedDict, Union
+from typing import IO, Any, List, Literal, Optional, Union
 
 from ansiscape import heavy
 from boto3.session import Session
@@ -15,15 +15,8 @@ from smokestack.exceptions import (
     ChangeSetExecutionError,
     SmokestackError,
 )
-from smokestack.models import PreviewOptions
-from smokestack.types import Capabilities, ChangeType, Parameters
-
-
-class CloudFormationParameter(TypedDict, total=False):
-    ParameterKey: str
-    ParameterValue: str
-    UsePreviousValue: bool
-    ResolvedValue: Optional[str]
+from smokestack.models import PreviewOptions, StackParameter
+from smokestack.types import Capabilities, ChangeType
 
 
 @dataclass
@@ -31,7 +24,7 @@ class ChangeSetArgs:
     capabilities: Capabilities
     body: str
     change_type: ChangeType
-    parameters: Parameters
+    parameters: List[StackParameter]
     session: Session
     stack: str
     writer: IO[str]
@@ -120,13 +113,7 @@ class ChangeSet(ChangeSetABC):
                 Capabilities=self.args.capabilities,
                 ChangeSetName=f"t{time_ns()}",
                 ChangeSetType=self.args.change_type,
-                Parameters=[
-                    {
-                        "ParameterKey": k,
-                        "ParameterValue": self.args.parameters[k],
-                    }
-                    for k in self.args.parameters
-                ],
+                Parameters=[k for k in self.args.parameters],
                 TemplateBody=self.args.body,
             )
 

@@ -22,7 +22,7 @@ def change_set_args(session: Mock, writer: StringIO) -> ChangeSetArgs:
         capabilities=[],
         body="",
         change_type="CREATE",
-        parameters={},
+        parameters=[],
         session=session,
         stack="",
         writer=writer,

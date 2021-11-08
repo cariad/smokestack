@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a91a591b3eb0991638c00f1dd1e587c79f03964bc92805eba8c87ba52ec2e680"
+            "sha256": "a7eeeefb5c2aebf72fcd8c0418751551e10d81ad9774209c08fdecc1f78501d5"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -174,8 +174,7 @@
         },
         "boto3-stubs": {
             "extras": [
-                "cloudformation",
-                "ssm"
+                "cloudformation"
             ],
             "hashes": [
                 "sha256:2d2f46165d6b8928e6afc4ad990c22af023badb0a7710967127bae635f05ff81",
@@ -473,13 +472,6 @@
             "hashes": [
                 "sha256:6d7bc1d39fc04f5153aea26acef6bf888ee86d1d97a0d5a1506e2f689b1aab17",
                 "sha256:bc3aaf852c51b71e328b8f603b11408898660ae85ceacf275bb4575431163e52"
-            ],
-            "version": "==1.19.12"
-        },
-        "mypy-boto3-ssm": {
-            "hashes": [
-                "sha256:6145099439c097fcb539952c7eaa9494213e0a41e2e4ae5e3158fccbe41cad53",
-                "sha256:d6f45cc9e045ca2d6de16c664d8155f48e10c939539161e488b511aa74bfc9b5"
             ],
             "version": "==1.19.12"
         },

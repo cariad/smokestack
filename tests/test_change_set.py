@@ -16,5 +16,5 @@ def test_stack_waiter_type(
     change_type: ChangeType,
     expect: str,
 ) -> None:
-    change_set_args["change_type"] = change_type
+    change_set_args.change_type = change_type
     assert ChangeSet(change_set_args).stack_waiter_type == expect
