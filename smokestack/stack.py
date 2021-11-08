@@ -1,13 +1,14 @@
 from abc import abstractproperty
 from pathlib import Path
 from sys import stdout
-from typing import IO, Union
+from typing import IO, List, Union
 
 from ansiscape import yellow
 from boto3.session import Session
 
 from smokestack.abc import StackABC
-from smokestack.change_set import ChangeSet
+from smokestack.change_set import ChangeSet, ChangeSetArgs
+from smokestack.models.stack_parameter import StackParameter
 from smokestack.types import Capabilities, ChangeType
 
 
@@ -42,16 +43,17 @@ class Stack(StackABC):
         else:
             body = self.body
 
-        return ChangeSet(
-            {
-                "capabilities": self.capabilities,
-                "body": body,
-                "change_type": self.change_type,
-                "session": self.session,
-                "stack_name": self.name,
-                "writer": self.writer,
-            }
+        args = ChangeSetArgs(
+            capabilities=self.capabilities,
+            body=body,
+            change_type=self.change_type,
+            parameters=self.parameters,
+            session=self.session,
+            stack=self.name,
+            writer=self.writer,
         )
+
+        return ChangeSet(args)
 
     @property
     def exists(self) -> bool:
@@ -64,3 +66,7 @@ class Stack(StackABC):
     @abstractproperty
     def name(self) -> str:
         """Gets the stack name."""
+
+    @property
+    def parameters(self) -> List[StackParameter]:
+        return []
