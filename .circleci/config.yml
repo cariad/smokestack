@@ -35,7 +35,7 @@ jobs:
       - restore_cache:
           keys:
             - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./lint-black
+      - run: pipenv run ./lint-black.sh
 
   lint_flake8:
     docker:
@@ -47,7 +47,7 @@ jobs:
       - restore_cache:
           keys:
             - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./lint-flake8
+      - run: pipenv run ./lint-flake8.sh
 
   lint_isort:
     docker:
@@ -59,19 +59,19 @@ jobs:
       - restore_cache:
           keys:
             - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./lint-isort
+      - run: pipenv run ./lint-isort.sh
 
   lint_package_types:
     docker:
       - image: cimg/python:3.10.0
     environment:
-    resource_class: medium
+    resource_class: large
     steps:
       - checkout
       - restore_cache:
           keys:
             - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./lint-package-types
+      - run: pipenv run ./lint-package-types.sh
 
   lint_shell:
     docker:
@@ -83,19 +83,19 @@ jobs:
       - restore_cache:
           keys:
             - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./lint-shell
+      - run: pipenv run ./lint-shell.sh
 
   lint_test_types:
     docker:
       - image: cimg/python:3.10.0
     environment:
-    resource_class: medium
+    resource_class: large
     steps:
       - checkout
       - restore_cache:
           keys:
             - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./lint-test-types
+      - run: pipenv run ./lint-test-types.sh
 
   lint_yaml:
     docker:
@@ -107,7 +107,7 @@ jobs:
       - restore_cache:
           keys:
             - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./lint-yaml
+      - run: pipenv run ./lint-yaml.sh
 
   test:
     docker:
@@ -119,7 +119,7 @@ jobs:
       - restore_cache:
           keys:
             - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./test
+      - run: pipenv run ./test.sh
       - codecov/upload:
           file: coverage.xml
 
