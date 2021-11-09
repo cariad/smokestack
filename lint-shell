@@ -1,0 +1,15 @@
+#!/bin/env bash
+set -euo pipefail
+
+shellcheck -o all --severity style -x lint-shell
+
+shellcheck -o all --severity style -x build
+shellcheck -o all --severity style -x lint
+shellcheck -o all --severity style -x lint-black
+shellcheck -o all --severity style -x lint-flake8
+shellcheck -o all --severity style -x lint-isort
+shellcheck -o all --severity style -x lint-package-types
+shellcheck -o all --severity style -x lint-test-types
+shellcheck -o all --severity style -x lint-yaml
+shellcheck -o all --severity style -x test
+echo "df"

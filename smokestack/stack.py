@@ -50,7 +50,7 @@ class Stack(StackABC):
             capabilities=self.capabilities,
             body=body,
             change_type=self.change_type,
-            parameters=params.api,
+            parameters=params.api_parameters,
             session=self.session,
             stack=self.name,
             writer=self.writer,
