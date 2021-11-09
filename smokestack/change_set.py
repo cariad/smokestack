@@ -5,7 +5,7 @@ from typing import IO, Any, List, Literal, Optional, Union
 from ansiscape import heavy
 from boto3.session import Session
 from botocore.exceptions import WaiterError
-from cfp.types import ApiParameter
+from cfp import ApiParameter
 from stackdiff import StackDiff
 from stackwhy import StackWhy
 
