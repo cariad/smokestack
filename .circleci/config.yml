@@ -65,7 +65,7 @@ jobs:
     docker:
       - image: cimg/python:3.10.0
     environment:
-    resource_class: large
+    resource_class: medium
     steps:
       - checkout
       - restore_cache:
@@ -89,7 +89,7 @@ jobs:
     docker:
       - image: cimg/python:3.10.0
     environment:
-    resource_class: large
+    resource_class: medium
     steps:
       - checkout
       - restore_cache:
@@ -133,7 +133,7 @@ jobs:
       - restore_cache:
           keys:
             - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./build
+      - run: pipenv run ./build.sh
       - run: pip install dist/*
       - run: if [[ -z "${CIRCLE_TAG}" ]]; then circleci-agent step halt; fi
       - run: pipenv run twine upload dist/*
