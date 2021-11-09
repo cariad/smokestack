@@ -3,7 +3,6 @@ from smokestack.models.operation import Operation, OperationValues
 from smokestack.models.preview_options import PreviewOptions
 from smokestack.models.request import Request
 from smokestack.models.stack_operation import StackOperation
-from smokestack.models.stack_parameter import StackParameter
 
 __all__ = [
     "Host",
@@ -12,5 +11,4 @@ __all__ = [
     "PreviewOptions",
     "Request",
     "StackOperation",
-    "StackParameter",
 ]
