@@ -5,10 +5,10 @@ from typing import IO, Union
 
 from ansiscape import yellow
 from boto3.session import Session
-from cfp import StackParameters
 
 from smokestack.abc import StackABC
 from smokestack.change_set import ChangeSet, ChangeSetArgs
+from smokestack.parameters import StackParameters
 from smokestack.types import Capabilities, ChangeType
 
 
@@ -71,4 +71,20 @@ class Stack(StackABC):
         """Gets the stack name."""
 
     def parameters(self, params: StackParameters) -> None:
+        """
+        Adds any stack parameters.
+
+        For example, to reference a parameter value in Systems Manager Parameter
+        Store:
+
+        .. code-block:: python
+
+            from smokestack import Stack
+            from smokestack.parameters import FromParameterStore, StackParameters
+
+            class MyStack(Stack):
+                def parameters(self, params: StackParameters) -> None:
+                    sp.add("ParameterA", FromParameterStore("/cfp/example1"))
+                    sp.add("ParameterB", FromParameterStore("/cfp/example2"))
+        """
         return

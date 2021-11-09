@@ -42,6 +42,7 @@ setup(
     install_requires=[
         "ansiscape >=1.0.0,   <2.0",
         "boto3     >=1.18.59, <2.0",
+        "cfp       ==1.0.0a3",
         "pyyaml    >=6.0,     <7.0",
         "stackdiff >=1.0,     <2.0",
         "stackwhy  >=1.0.1,   <2.0",
@@ -57,6 +58,7 @@ setup(
         "smokestack.cli",
         "smokestack.exceptions",
         "smokestack.models",
+        "smokestack.parameters",
         "smokestack.version",
     ],
     package_data={
@@ -65,6 +67,7 @@ setup(
         "smokestack.cli": ["py.typed"],
         "smokestack.exceptions": ["py.typed"],
         "smokestack.models": ["py.typed"],
+        "smokestack.parameters": ["py.typed"],
         "smokestack.version": ["py.typed"],
     },
     python_requires=">=3.8",
