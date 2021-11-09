@@ -183,7 +183,6 @@ workflows:
             tags:
               only: /.*/
           requires:
-            - cache
             - lint_black
             - lint_flake8
             - lint_isort
