@@ -1,14 +1,16 @@
+# The following environment variables are set in the CircleCI project:
+#
+#    PIPENV_VENV_IN_PROJECT: true
+
 version: 2.1
 
 orbs:
   codecov: codecov/codecov@3.0.0
 
 jobs:
-  build:
+  cache:
     docker:
       - image: cimg/python:3.10.0
-    environment:
-      PIPENV_VENV_IN_PROJECT: true
     resource_class: medium
     steps:
       - checkout
@@ -22,9 +24,132 @@ jobs:
           key: pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:
             - .venv
-      - run: pipenv run ./build.sh
+
+  lint_black:
+    docker:
+      - image: cimg/python:3.10.0
+    environment:
+    resource_class: medium
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run: pipenv run ./lint-black.sh
+
+  lint_flake8:
+    docker:
+      - image: cimg/python:3.10.0
+    environment:
+    resource_class: medium
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run: pipenv run ./lint-flake8.sh
+
+  lint_isort:
+    docker:
+      - image: cimg/python:3.10.0
+    environment:
+    resource_class: medium
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run: pipenv run ./lint-isort.sh
+
+  lint_package_types:
+    docker:
+      - image: cimg/python:3.10.0
+    environment:
+    resource_class: medium
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - restore_cache:
+          keys:
+            - mypy-package-{{ .Branch }}
+            - mypy-package-main
+      - run: pipenv run ./lint-package-types.sh
+      - save_cache:
+          key: mypy-package-{{ .Branch }}
+          paths:
+            - .mypy_cache
+
+  lint_shell:
+    docker:
+      - image: cimg/python:3.10.0
+    environment:
+    resource_class: medium
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run: pipenv run ./lint-shell.sh
+
+  lint_test_types:
+    docker:
+      - image: cimg/python:3.10.0
+    environment:
+    resource_class: medium
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - restore_cache:
+          keys:
+            - mypy-test-{{ .Branch }}
+            - mypy-test-main
+      - run: pipenv run ./lint-test-types.sh
+      - save_cache:
+          key: mypy-test-{{ .Branch }}
+          paths:
+            - .mypy_cache
+
+  lint_yaml:
+    docker:
+      - image: cimg/python:3.10.0
+    environment:
+    resource_class: medium
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run: pipenv run ./lint-yaml.sh
+
+  test:
+    docker:
+      - image: cimg/python:3.10.0
+    environment:
+    resource_class: medium
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run: pipenv run ./test.sh
       - codecov/upload:
           file: coverage.xml
+
+  build:
+    docker:
+      - image: cimg/python:3.10.0
+    environment:
+    resource_class: medium
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run: pipenv run ./build.sh
       - run: pip install dist/*
       - run: if [[ -z "${CIRCLE_TAG}" ]]; then circleci-agent step halt; fi
       - run: pipenv run twine upload dist/*
@@ -32,9 +157,53 @@ jobs:
 workflows:
   default:
     jobs:
+      - cache:
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              only: /.*/
+      - lint_black:
+          requires:
+            - cache
+      - lint_flake8:
+          requires:
+            - cache
+      - lint_isort:
+          requires:
+            - cache
+      - lint_package_types:
+          requires:
+            - cache
+      - lint_shell:
+          requires:
+            - cache
+      - lint_test_types:
+          requires:
+            - cache
+      - lint_yaml:
+          requires:
+            - cache
+      - test:
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              only: /.*/
+          requires:
+            - cache
       - build:
           filters:
             branches:
               only: /.*/
             tags:
               only: /.*/
+          requires:
+            - lint_black
+            - lint_flake8
+            - lint_isort
+            - lint_package_types
+            - lint_shell
+            - lint_test_types
+            - lint_yaml
+            - test

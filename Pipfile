@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 ansiscape = "~=1.0"
 boto3 = "~=1.18"
+cfp = "==1.0.0a3"
 pyyaml = "~=6.0"
 stackdiff = "~=1.1"
 stackwhy = "~=1.0.1"
