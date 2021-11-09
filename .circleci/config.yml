@@ -71,7 +71,15 @@ jobs:
       - restore_cache:
           keys:
             - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - restore_cache:
+          keys:
+            - mypy-package-{{ .Branch }}
+            - mypy-package-main
       - run: pipenv run ./lint-package-types.sh
+      - save_cache:
+          key: mypy-package-{{ .Branch }}
+          paths:
+            - .mypy_cache
 
   lint_shell:
     docker:
@@ -95,7 +103,15 @@ jobs:
       - restore_cache:
           keys:
             - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - restore_cache:
+          keys:
+            - mypy-test-{{ .Branch }}
+            - mypy-test-main
       - run: pipenv run ./lint-test-types.sh
+      - save_cache:
+          key: mypy-test-{{ .Branch }}
+          paths:
+            - .mypy_cache
 
   lint_yaml:
     docker:
