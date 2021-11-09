@@ -1,7 +1,7 @@
 from abc import abstractproperty
 from pathlib import Path
 from sys import stdout
-from typing import IO, Union
+from typing import IO, List, Union
 
 from ansiscape import yellow
 from boto3.session import Session
