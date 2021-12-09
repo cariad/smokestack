@@ -1,9 +1,12 @@
 {
   "cSpell.words": [
     "endeavor",
+    "epilog",
+    "myproject",
     "mypy",
     "pyyaml",
     "tablefmt",
     "throttl"
-  ]
+  ],
+  "restructuredtext.confPath": "${workspaceFolder}/docsrc/source"
 }
