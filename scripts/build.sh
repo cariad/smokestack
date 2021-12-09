@@ -9,7 +9,7 @@ else
   version="-1.-1.-1"
 fi
 
-echo "${version}" > smokestack/version/VERSION
+echo "${version}" > smokestack/VERSION
 rm -rf dist
 python setup.py bdist_wheel
 rm -rf build

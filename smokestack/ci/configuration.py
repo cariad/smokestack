@@ -42,7 +42,10 @@ def get_operation() -> Operation:
 
     branch = environ.get(config["branch_name_env"], None)
     if branch is None:
-        raise ConfigurationError(default_path, f'No branch name: {config["branch_name_env"]}')
+        raise ConfigurationError(
+            default_path,
+            f'No branch name: {config["branch_name_env"]}',
+        )
 
     op_dict = get_operation_dict(branch, config["ci"])
     return Operation(**op_dict)

@@ -1,5 +1,5 @@
 from time import time_ns
-from typing import Any, Literal, Optional, Union
+from typing import Any, Optional
 
 from ansiscape import heavy
 from botocore.exceptions import WaiterError
@@ -13,7 +13,7 @@ from smokestack.exceptions import (
     SmokestackError,
 )
 from smokestack.types import ChangeSetArguments
-from io import StringIO
+
 
 class ChangeSet:
     """CloudFormation stack change set."""
@@ -26,7 +26,6 @@ class ChangeSet:
         self._has_rendered_no_changes = False
         self._stack_arn = args.stack if args.stack.startswith("arn:") else None
         self._stack_diff: Optional[StackDiff] = None
-        self._out = StringIO()
 
     def __enter__(self) -> "ChangeSet":
         endeavor(self._try_create)
@@ -41,7 +40,7 @@ class ChangeSet:
         # Prefer the ARN if we have it:
         stack = self._stack_arn or self._args.stack
         sw = StackWhy(stack=stack, session=self._args.session)
-        sw.render(self._out)
+        sw.render(self._args.out)
         raise ChangeSetExecutionError(stack_name=self._args.stack)
 
     def _try_create(self) -> None:
@@ -73,7 +72,6 @@ class ChangeSet:
         self._change_set_arn = response["Id"]
         self._stack_arn = response["StackId"]
 
-
     def _try_delete(self) -> None:
         if self._change_set_arn is None:
             # The change set wasn't created, so there's nothing to delete:
@@ -91,12 +89,10 @@ class ChangeSet:
             # We can't delete failed change sets, and that's okay.
             pass
 
-
     def _try_execute(self) -> None:
         # pyright: reportUnknownMemberType=false
         client = self._args.session.client("cloudformation")
         client.execute_change_set(ChangeSetName=self.change_set_arn)
-
 
     def _try_wait_for_creation(self) -> None:
         client = self._args.session.client("cloudformation")
@@ -113,12 +109,17 @@ class ChangeSet:
                         return
             raise
 
-
     def _try_wait_for_execute(self) -> None:
         client = self._args.session.client("cloudformation")
-        waiter = client.get_waiter(self.stack_waiter_type)
+
+        waiter = (
+            client.get_waiter("stack_update_complete")
+            if self._args.change_type == "UPDATE"
+            else client.get_waiter("stack_create_complete")
+        )
 
         waiter.wait(StackName=self._args.stack)
+        self._args.out.write("\nExecuted successfully! 🎉\n")
         self._executed = True
 
     @property
@@ -137,15 +138,11 @@ class ChangeSet:
         endeavor(self._try_execute)
         endeavor(self._try_wait_for_execute, self._handle_execution_failure)
 
-
-
-
-
     def render_no_changes(self) -> None:
         # Prevent an preview + execute run emitting "no changes" twice.
         if self._has_rendered_no_changes:
             return
-        self._out.write("\nNo changes to apply.\n")
+        self._args.out.write("\nNo changes to apply.\n")
         self._has_rendered_no_changes = True
 
     def preview(self) -> None:
@@ -153,11 +150,11 @@ class ChangeSet:
             self.render_no_changes()
             return
 
-        self._out.write("\n")
-        self._out.write(f"{heavy('Template changes:').encoded} \n")
-        self.visualizer.render_differences(self._out)
-        self._out.write("\n")
-        self.visualizer.render_changes(self._out)
+        self._args.out.write("\n")
+        self._args.out.write(f"{heavy('Template changes:').encoded} \n")
+        self.visualizer.render_differences(self._args.out)
+        self._args.out.write("\n")
+        self.visualizer.render_changes(self._args.out)
 
     @property
     def visualizer(self) -> StackDiff:
@@ -170,13 +167,3 @@ class ChangeSet:
                 session=self._args.session,
             )
         return self._stack_diff
-
-    @property
-    def stack_waiter_type(
-        self,
-    ) -> Union[Literal["stack_update_complete"], Literal["stack_create_complete"]]:
-        return (
-            "stack_update_complete"
-            if self._args.change_type == "UPDATE"
-            else "stack_create_complete"
-        )

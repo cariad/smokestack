@@ -4,7 +4,7 @@ from multiprocessing import Queue
 from queue import Empty
 from typing import IO, List, Optional, Type, cast
 
-from ansiscape import yellow, heavy
+from ansiscape import heavy, yellow
 from ansiscape.checks import should_emit_codes
 
 from smokestack.enums import StackStatus
@@ -45,7 +45,9 @@ class StackSet(ABC):
             self._add_to_inbox(need)
 
     def _get_listed(
-        self, stack_type: Type[StackProtocol], src: List[Stack],
+        self,
+        stack_type: Type[StackProtocol],
+        src: List[Stack],
     ) -> Optional[Stack]:
         """Gets the stack instance of the given type."""
 
@@ -114,17 +116,7 @@ class StackSet(ABC):
             stack._stack_parameters.render(self._out)
 
         if result.exception:
-        #     stack = self._stack_arn or self._args.stack
-        #     sw = StackWhy(stack=stack, session=self._args.session)
-        #     sw.render(self._args.writer)
             raise SmokestackError(result.exception)
-
-        # if not result.has_changes:
-        #     self._out.write("\nNo changes to apply.\n")
-
-        # if result.operation.execute:
-        #     self._out.write("\nExecuted successfully! 🎉\n")
-
 
         self._last_write_was_result = True
 

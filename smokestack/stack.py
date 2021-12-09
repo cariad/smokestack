@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from io import StringIO
 from pathlib import Path
 from typing import List, Optional, Type, Union
 
@@ -9,6 +10,7 @@ from smokestack.change_set import ChangeSet
 from smokestack.protocols import StackProtocol
 from smokestack.types import Capabilities, ChangeSetArguments
 
+
 class Stack(StackProtocol):
     """
     An Amazon Web Services CloudFormation stack.
@@ -17,6 +19,14 @@ class Stack(StackProtocol):
     def __init__(self, session: Optional[Session] = None) -> None:
         self._session = session or Session(region_name=self.region)
         self._stack_parameters: Optional[StackParameters] = None
+
+        # A reference to "out" will be passed to the thread that creates and
+        # operates on the change set. By anchoring the writer here, we'll have a
+        # reference in the main thread that we can print to stdout later.
+        self._out = StringIO()
+        """
+        String writer for anything to be considered as standard output.
+        """
 
     @property
     def _resolved_body(self) -> str:
@@ -45,8 +55,6 @@ class Stack(StackProtocol):
 
         return []
 
-
-
     def change_set(self) -> ChangeSet:
         """Creates and returns a change set."""
 
@@ -57,6 +65,7 @@ class Stack(StackProtocol):
             capabilities=self.capabilities,
             body=self._resolved_body,
             change_type="UPDATE" if self.exists else "CREATE",
+            out=self._out,
             parameters=self._stack_parameters.api_parameters,
             session=self._session,
             stack=self.name,
@@ -114,9 +123,13 @@ class Stack(StackProtocol):
 
         return []
 
-    # @property
-    # def out(self) -> StringIO:
-    #     return self._out
+    @property
+    def out(self) -> StringIO:
+        """
+        Gets a stream of any string to be considered as standard output.
+        """
+
+        return self._out
 
     def parameters(self, params: StackParameters) -> None:
         """

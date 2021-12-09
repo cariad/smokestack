@@ -1,3 +1,5 @@
+from io import StringIO
+
 from mock import Mock, patch
 from mock.mock import ANY
 from pytest import mark, raises
@@ -13,6 +15,7 @@ def test_change_set_arn__none() -> None:
     args = ChangeSetArguments(
         body="",
         change_type="UPDATE",
+        out=StringIO(),
         session=Mock(),
         stack="MyStack",
     )
@@ -24,11 +27,13 @@ def test_change_set_arn__none() -> None:
 
 
 def test_execute() -> None:
+    out = StringIO()
     session = Mock()
 
     args = ChangeSetArguments(
         body="",
         change_type="UPDATE",
+        out=out,
         session=session,
         stack="MyStack",
     )
@@ -38,14 +43,17 @@ def test_execute() -> None:
     change_set._has_changes = True
     change_set.execute()
     assert change_set._executed
+    assert out.getvalue() == "\nExecuted successfully! 🎉\n"
 
 
 def test_execute__no_changes() -> None:
+    out = StringIO()
     session = Mock()
 
     args = ChangeSetArguments(
         body="",
         change_type="UPDATE",
+        out=out,
         session=session,
         stack="MyStack",
     )
@@ -54,14 +62,17 @@ def test_execute__no_changes() -> None:
     change_set._has_changes = False
     change_set.execute()
     assert not change_set._executed
+    assert out.getvalue() == "\nNo changes to apply.\n"
 
 
 def test_handle_execution_failure() -> None:
+    out = StringIO()
     session = Mock()
 
     args = ChangeSetArguments(
         body="",
         change_type="UPDATE",
+        out=out,
         session=session,
         stack="MyStack",
     )
@@ -78,22 +89,7 @@ def test_handle_execution_failure() -> None:
             change_set._handle_execution_failure()
 
     sw_cls.assert_called_once_with(stack="MyStack", session=session)
-
-
-@mark.parametrize(
-    "change_type, expect",
-    [
-        ("UPDATE", "stack_update_complete"),
-        ("CREATE", "stack_create_complete"),
-    ],
-)
-def test_stack_waiter_type(
-    change_set_args: ChangeSetArguments,
-    change_type: ChangeType,
-    expect: str,
-) -> None:
-    change_set_args.change_type = change_type
-    assert ChangeSet(change_set_args).stack_waiter_type == expect
+    assert out.getvalue() == ""
 
 
 def test_try_create() -> None:
@@ -112,10 +108,13 @@ def test_try_create() -> None:
     session = Mock()
     session.client = client
 
+    out = StringIO()
+
     args = ChangeSetArguments(
         body="template body",
         capabilities=["CAPABILITY_NAMED_IAM"],
         change_type="UPDATE",
+        out=out,
         parameters=[
             {
                 "ParameterKey": "foo",
@@ -145,7 +144,7 @@ def test_try_create() -> None:
 
     assert change_set._change_set_arn == "response_id"
     assert change_set._stack_arn == "response_stack_id"
-
+    assert out.getvalue() == ""
 
 
 def test_try_delete__create() -> None:
@@ -159,9 +158,12 @@ def test_try_delete__create() -> None:
     session = Mock()
     session.client = client
 
+    out = StringIO()
+
     args = ChangeSetArguments(
         body="",
         change_type="CREATE",
+        out=out,
         session=session,
         stack="MyStack",
     )
@@ -174,7 +176,7 @@ def test_try_delete__create() -> None:
     delete_stack.assert_called_once_with(
         StackName="MyStack",
     )
-
+    assert out.getvalue() == ""
 
 
 def test_try_delete__update() -> None:
@@ -188,9 +190,12 @@ def test_try_delete__update() -> None:
     session = Mock()
     session.client = client
 
+    out = StringIO()
+
     args = ChangeSetArguments(
         body="",
         change_type="UPDATE",
+        out=out,
         session=session,
         stack="MyStack",
     )
@@ -203,7 +208,7 @@ def test_try_delete__update() -> None:
     delete_change_set.assert_called_once_with(
         ChangeSetName="MyChangeSetArn",
     )
-
+    assert out.getvalue() == ""
 
 
 def test_try_execute() -> None:
@@ -217,9 +222,12 @@ def test_try_execute() -> None:
     session = Mock()
     session.client = client
 
+    out = StringIO()
+
     args = ChangeSetArguments(
         body="",
         change_type="UPDATE",
+        out=out,
         session=session,
         stack="MyStack",
     )
@@ -229,8 +237,7 @@ def test_try_execute() -> None:
     change_set._try_execute()
     client.assert_called_once_with("cloudformation")
     execute_change_set.assert_called_once_with(ChangeSetName="MyChangeSetArn")
-
-
+    assert out.getvalue() == ""
 
 
 def test_try_wait_for_creation() -> None:
@@ -249,9 +256,12 @@ def test_try_wait_for_creation() -> None:
     session = Mock()
     session.client = client
 
+    out = StringIO()
+
     args = ChangeSetArguments(
         body="",
         change_type="UPDATE",
+        out=out,
         session=session,
         stack="MyStack",
     )
@@ -264,10 +274,17 @@ def test_try_wait_for_creation() -> None:
     get_waiter.assert_called_once_with("change_set_create_complete")
     wait.assert_called_once_with(ChangeSetName="MyChangeSetArn")
     assert change_set._has_changes
+    assert out.getvalue() == ""
 
 
-
-def test_try_wait_for_execute() -> None:
+@mark.parametrize(
+    "change_type, expect_waiter",
+    [
+        ("CREATE", "stack_create_complete"),
+        ("UPDATE", "stack_update_complete"),
+    ],
+)
+def test_try_wait_for_execute(change_type: ChangeType, expect_waiter: str) -> None:
     wait = Mock()
 
     waiter = Mock()
@@ -283,9 +300,12 @@ def test_try_wait_for_execute() -> None:
     session = Mock()
     session.client = client
 
+    out = StringIO()
+
     args = ChangeSetArguments(
         body="",
-        change_type="UPDATE",
+        change_type=change_type,
+        out=out,
         session=session,
         stack="MyStack",
     )
@@ -294,7 +314,7 @@ def test_try_wait_for_execute() -> None:
     change_set._try_wait_for_execute()
 
     client.assert_called_once_with("cloudformation")
-    get_waiter.assert_called_once_with("stack_update_complete")
+    get_waiter.assert_called_once_with(expect_waiter)
     wait.assert_called_once_with(StackName="MyStack")
     assert change_set._executed
-    # assert writer.getvalue() == "\nExecuted successfully! 🎉\n"
+    assert out.getvalue() == "\nExecuted successfully! 🎉\n"

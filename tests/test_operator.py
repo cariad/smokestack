@@ -1,7 +1,9 @@
-from smokestack.operator import Operator
-from smokestack.types import Operation,OperationResult
-from mock import Mock
 from logging import getLogger
+
+from mock import Mock
+
+from smokestack.operator import Operator
+from smokestack.types import Operation, OperationResult
 
 getLogger("smokestack").setLevel("DEBUG")
 
