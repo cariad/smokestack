@@ -15,11 +15,11 @@ ci:
       # ...do preview:
       preview: true
       # ...and do deploy:
-      deploy: true
+      execute: true
 
   # When none of the rules above apply:
   default:
     # ...do preview:
     preview: true
     # ...but do not deploy:
-    deploy: false
+    execute: false
