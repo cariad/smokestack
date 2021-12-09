@@ -2,11 +2,12 @@
   "cSpell.words": [
     "endeavor",
     "epilog",
+    "maxdepth",
     "myproject",
     "mypy",
     "pyyaml",
     "tablefmt",
-    "throttl"
-  ],
+    "toctree"
+],
   "restructuredtext.confPath": "${workspaceFolder}/docsrc/source"
 }
