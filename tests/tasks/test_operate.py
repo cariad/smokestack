@@ -1,28 +1,20 @@
-from typing import List, Type
+from io import StringIO
+
 from cline import CannotMakeArguments, CommandLineArguments
 from mock import patch
 from pytest import raises
 
+from smokestack.exceptions import SmokestackError
+from smokestack.register import register
 from smokestack.tasks.operate import OperateTask, OperateTaskArguments
 from smokestack.types import Operation
-from smokestack.register import register
-from smokestack import Stack, StackSet
-from io import StringIO
-from smokestack.exceptions import SmokestackError
-
-
-class MockStackSet(StackSet):
-    @property
-    def stacks(self) -> List[Type[Stack]]:
-        return []
-
-execute_path = "tests.tasks.test_operate.MockStackSet.execute"
+from tests.mocks import MockStackSet
 
 
 def test_invoke() -> None:
     register("mock", MockStackSet)
 
-    operation=Operation(execute=False, preview=True)
+    operation = Operation(execute=False, preview=True)
 
     args = OperateTaskArguments(
         operation=operation,
@@ -32,7 +24,7 @@ def test_invoke() -> None:
     out = StringIO()
     task = OperateTask(args, out)
 
-    with patch(execute_path) as execute:
+    with patch("tests.mocks.MockStackSet.execute") as execute:
         exit_code = task.invoke()
 
     execute.assert_called_once_with(operation)
@@ -42,7 +34,7 @@ def test_invoke() -> None:
 def test_invoke__fail() -> None:
     register("mock", MockStackSet)
 
-    operation=Operation(execute=False, preview=True)
+    operation = Operation(execute=False, preview=True)
 
     args = OperateTaskArguments(
         operation=operation,
@@ -52,13 +44,15 @@ def test_invoke__fail() -> None:
     out = StringIO()
     task = OperateTask(args, out)
 
-    with patch(execute_path, side_effect=SmokestackError("fire")):
+    with patch("tests.mocks.MockStackSet.execute", side_effect=SmokestackError("fire")):
         exit_code = task.invoke()
 
-    assert out.getvalue() == """
+    expect = """
 🔥 fire
 
 """
+
+    assert out.getvalue() == expect
     assert exit_code == 1
 
 

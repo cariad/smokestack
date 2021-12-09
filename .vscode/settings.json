@@ -7,6 +7,7 @@
     "mypy",
     "pyyaml",
     "tablefmt",
+    "throttl",
     "toctree"
 ],
   "restructuredtext.confPath": "${workspaceFolder}/docsrc/source"

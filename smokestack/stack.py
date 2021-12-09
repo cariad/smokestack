@@ -1,78 +1,129 @@
-from abc import abstractproperty
+from abc import abstractmethod
 from pathlib import Path
-from sys import stdout
-from typing import IO, Union
+from typing import List, Optional, Type, Union
 
-from ansiscape import yellow
 from boto3.session import Session
+from cfp import StackParameters
 
-from smokestack.abc import StackABC
-from smokestack.change_set import ChangeSet, ChangeSetArgs
-from smokestack.parameters import StackParameters
-from smokestack.types import Capabilities, ChangeType
+from smokestack.change_set import ChangeSet
+from smokestack.protocols import StackProtocol
+from smokestack.types import Capabilities, ChangeSetArguments
 
+class Stack(StackProtocol):
+    """
+    An Amazon Web Services CloudFormation stack.
+    """
 
-class Stack(StackABC):
-    def __init__(self, writer: IO[str] = stdout) -> None:
-        self.session = Session(region_name=self.region)
-        self.writer = writer
+    def __init__(self, session: Optional[Session] = None) -> None:
+        self._session = session or Session(region_name=self.region)
+        self._stack_parameters: Optional[StackParameters] = None
 
-        self.client = self.session.client(
-            "cloudformation",
-        )  # pyright: reportUnknownMemberType=false
-        self.writer.write(
-            f"Operating on stack {yellow(self.name)} in {yellow(self.region)}.\n"
-        )
+    @property
+    def _resolved_body(self) -> str:
+        """Gets the template body."""
 
-    @abstractproperty
+        if isinstance(self.body, str):
+            return self.body
+
+        with open(self.body, "r") as f:
+            return f.read()
+
+    @property
+    @abstractmethod
     def body(self) -> Union[str, Path]:
-        """Gets the template body or path to the template file."""
+        """
+        Gets the template body or path to the template file.
+        """
 
     @property
     def capabilities(self) -> Capabilities:
+        """
+        Gets the capabilities required to deploy this stack.
+
+        Returns no capabilities by default.
+        """
+
         return []
 
-    @property
-    def change_type(self) -> ChangeType:
-        return "UPDATE" if self.exists else "CREATE"
 
-    def create_change_set(self) -> ChangeSet:
-        if isinstance(self.body, Path):
-            with open(self.body, "r") as f:
-                body = f.read()
-        else:
-            body = self.body
 
-        params = StackParameters()
-        self.parameters(params)
+    def change_set(self) -> ChangeSet:
+        """Creates and returns a change set."""
 
-        args = ChangeSetArgs(
+        self._stack_parameters = StackParameters()
+        self.parameters(self._stack_parameters)
+
+        args = ChangeSetArguments(
             capabilities=self.capabilities,
-            body=body,
-            change_type=self.change_type,
-            parameters=params.api_parameters,
-            session=self.session,
+            body=self._resolved_body,
+            change_type="UPDATE" if self.exists else "CREATE",
+            parameters=self._stack_parameters.api_parameters,
+            session=self._session,
             stack=self.name,
-            writer=self.writer,
         )
 
         return ChangeSet(args)
 
     @property
     def exists(self) -> bool:
+        """Returns `True` if the stack exists, otherwise `False`."""
+
+        # pyright: reportUnknownMemberType=false
+        self.client = self._session.client("cloudformation")
+
         try:
             self.client.describe_stacks(StackName=self.name)
             return True
         except self.client.exceptions.ClientError:
             return False
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def name(self) -> str:
-        """Gets the stack name."""
+        """Gets the stack's name."""
+
+    @property
+    def needs(self) -> List[Type["Stack"]]:
+        """
+        Gets the stacks that must be deployed before this one.
+
+        The stack has no dependencies by default. Override this property only if
+        you have dependencies to describe.
+
+        In this example, Smokestack will ensure that the database and logging
+        stacks are deployed before deploying the application stack:
+
+        .. code-block:: python
+
+            from smokestack import Stack
+
+            import myproject.stacks
+
+
+            class ApplicationStack(Stack):
+
+                # ...
+
+                @property
+                def needs(self) -> List[Type[Stack]]:
+                    return [
+                        myproject.stacks.DatabaseStack,
+                        myproject.stacks.LoggingStack,
+                    ]
+        """
+
+        return []
+
+    # @property
+    # def out(self) -> StringIO:
+    #     return self._out
 
     def parameters(self, params: StackParameters) -> None:
         """
         Adds any stack parameters.
+
+        No parameters will be added by default. Override this method only if
+        your stack has parameters.
 
         For example, to reference a parameter value in Systems Manager Parameter
         Store:
@@ -82,9 +133,15 @@ class Stack(StackABC):
             from smokestack import Stack
             from smokestack.parameters import FromParameterStore, StackParameters
 
-            class MyStack(Stack):
+            class ApplicationStack(Stack):
+
+                # ...
+
                 def parameters(self, params: StackParameters) -> None:
-                    sp.add("ParameterA", FromParameterStore("/cfp/example1"))
-                    sp.add("ParameterB", FromParameterStore("/cfp/example2"))
+                    sp.add("InstanceType", FromParameterStore("/App/InstanceType"))
         """
-        return
+
+    @property
+    @abstractmethod
+    def region(self) -> str:
+        """Gets the Amazon Web Services region to deploy this stack into."""

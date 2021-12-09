@@ -1,9 +1,7 @@
-from io import StringIO
-
 from mock import Mock
 from pytest import fixture
 
-from smokestack.change_set import ChangeSetArgs
+from smokestack.types import ChangeSetArguments
 
 
 @fixture
@@ -12,18 +10,12 @@ def session() -> Mock:
 
 
 @fixture
-def writer() -> StringIO:
-    return StringIO()
-
-
-@fixture
-def change_set_args(session: Mock, writer: StringIO) -> ChangeSetArgs:
-    return ChangeSetArgs(
+def change_set_args(session: Mock) -> ChangeSetArguments:
+    return ChangeSetArguments(
         capabilities=[],
         body="",
         change_type="CREATE",
         parameters=[],
         session=session,
         stack="",
-        writer=writer,
     )

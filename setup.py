@@ -2,7 +2,7 @@ from pathlib import Path
 
 from setuptools import setup  # pyright: reportMissingTypeStubs=false
 
-from smokestack.version import get_version
+from smokestack import __version__
 
 readme_path = Path(__file__).parent / "README.md"
 
@@ -10,23 +10,18 @@ with open(readme_path, encoding="utf-8") as f:
     long_description = f.read()
 
 classifiers = [
-    "Environment :: Console",
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
-    "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
-    "Topic :: Utilities",
     "Typing :: Typed",
 ]
 
-version = get_version()
-
-if "a" in version:
+if "a" in __version__:
     classifiers.append("Development Status :: 3 - Alpha")
-elif "b" in version:
+elif "b" in __version__:
     classifiers.append("Development Status :: 4 - Beta")
 else:
     classifiers.append("Development Status :: 5 - Production/Stable")
@@ -40,13 +35,13 @@ setup(
     description="CloudFormation stacks, beautifully",
     include_package_data=True,
     install_requires=[
-        "ansiscape >=1.0.0,   <2.0",
-        "boto3     >=1.18.59, <2.0",
-        "cfp       ==1.0.0a3",
-        "pyyaml    >=6.0,     <7.0",
-        "stackdiff >=1.0,     <2.0",
-        "stackwhy  >=1.0.1,   <2.0",
-        "tabulate  >=0.8.9 ,  <1.0",
+        "ansiscape ~=1.0",
+        "boto3     ~=1.20",
+        "cfp       ~=1.0",
+        "cline     ~=1.2",
+        "pyyaml    ~=6.0",
+        "stackdiff ~=1.1",
+        "stackwhy  ~=1.0.1",
     ],
     license="MIT",
     long_description=long_description,
@@ -54,23 +49,21 @@ setup(
     name="smokestack",
     packages=[
         "smokestack",
-        "smokestack.abc",
-        "smokestack.cli",
+        "smokestack.ci",
+        "smokestack.enums",
         "smokestack.exceptions",
-        "smokestack.models",
-        "smokestack.parameters",
-        "smokestack.version",
+        "smokestack.tasks",
+        "smokestack.types",
     ],
     package_data={
         "smokestack": ["py.typed"],
-        "smokestack.abc": ["py.typed"],
-        "smokestack.cli": ["py.typed"],
+        "smokestack.ci": ["py.typed"],
+        "smokestack.enums": ["py.typed"],
         "smokestack.exceptions": ["py.typed"],
-        "smokestack.models": ["py.typed"],
-        "smokestack.parameters": ["py.typed"],
-        "smokestack.version": ["py.typed"],
+        "smokestack.tasks": ["py.typed"],
+        "smokestack.types": ["py.typed"],
     },
     python_requires=">=3.8",
     url="https://github.com/cariad/smokestack",
-    version=version,
+    version=__version__,
 )
