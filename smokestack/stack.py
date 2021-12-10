@@ -4,11 +4,10 @@ from typing import List, Type, Union
 
 from cfp import StackParameters
 
-from smokestack.protocols import StackProtocol
 from smokestack.types import Capabilities
 
 
-class Stack(StackProtocol):
+class Stack:
     """
     An Amazon Web Services CloudFormation stack.
 

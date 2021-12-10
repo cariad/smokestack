@@ -7,7 +7,7 @@ from ansiscape import heavy, yellow
 from ansiscape.checks import should_emit_codes
 
 from smokestack.change_set import ChangeSet
-from smokestack.protocols.stack_protocol import StackProtocol
+from smokestack.stack import Stack
 from smokestack.types import Operation, OperationResult
 
 
@@ -16,7 +16,7 @@ class Operator(Process):
         self,
         operation: Operation,
         queue: "Queue[OperationResult]",
-        stack: StackProtocol,
+        stack: Stack,
         token: str,
     ) -> None:
         super().__init__()

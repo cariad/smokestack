@@ -16,7 +16,7 @@ from smokestack.exceptions import (
     ChangeSetExecutionError,
     SmokestackError,
 )
-from smokestack.protocols import StackProtocol
+from smokestack.stack import Stack
 from smokestack.types import ChangeType
 
 
@@ -25,7 +25,7 @@ class ChangeSet:
     A stack change set.
     """
 
-    def __init__(self, stack: StackProtocol, out: StringIO) -> None:
+    def __init__(self, stack: Stack, out: StringIO) -> None:
         self._logger = getLogger("smokestack")
         self._session = Session(region_name=stack.region)
 
