@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLI Usage &mdash; Smokestack  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Register Stack Sets in the CLI" href="usage/cli.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Smokestack
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Smokestack</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">CLI Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#preview">Preview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#execute">Execute</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-in-ci">Running in CI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#logging">Logging</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Smokestack</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>CLI Usage</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/cli.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cli-usage">
+<h1>CLI Usage<a class="headerlink" href="#cli-usage" title="Permalink to this headline"></a></h1>
+<p>The following examples assume your infrastructure-as-code project is a Python module named <code class="docutils literal notranslate"><span class="pre">myproject</span></code>.</p>
+<section id="preview">
+<h2>Preview<a class="headerlink" href="#preview" title="Permalink to this headline"></a></h2>
+<p>To preview the changes that a stack set <em>would</em> deploy, pass the stack set key and <code class="docutils literal notranslate"><span class="pre">--preview</span></code> arguments:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m myproject app --preview</span>
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>🌄 Starting DatabaseStack…
+🌄 Starting LoggingStack…
+
+🌞 Stack Database in us-east-1
+
+No changes to apply.
+
+🌞 Stack Logging in us-east-1
+
+No changes to apply.
+
+🌞 Stack Application in us-east-1
+
+InstanceType = t2.large
+
+Template changes:
+Description: Application  =  Description: Application
+Parameters:               =  Parameters:
+  InstanceType:           =    InstanceType:
+    Type: String          =      Type: String
+Resources:                =  Resources:
+                          &gt;    ExampleResource:
+                          &gt;      Properties:
+                          &gt;        InstanceType:
+                          &gt;          Ref: InstanceType
+
+Logical ID       Physical ID    Resource Type           Action
+ExampleResource                 AWS::Example::Resource  Add
+
+🥳 Done!
+</pre></div>
+</div>
+</section>
+<section id="execute">
+<h2>Execute<a class="headerlink" href="#execute" title="Permalink to this headline"></a></h2>
+<p>To deploy a stack set’s changes, pass the stack set key and <code class="docutils literal notranslate"><span class="pre">--execute</span></code> arguments:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m myproject app --execute</span>
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>🌄 Starting DatabaseStack…
+🌄 Starting LoggingStack…
+
+🌞 Stack Database in us-east-1
+
+No changes to apply.
+
+🌞 Stack Logging in us-east-1
+
+No changes to apply.
+
+🌞 Stack Application in us-east-1
+
+InstanceType = t2.large
+
+Executed successfully! 🎉
+
+🥳 Done!
+</pre></div>
+</div>
+<p>Note that you can pass both <code class="docutils literal notranslate"><span class="pre">--execute</span></code> and <code class="docutils literal notranslate"><span class="pre">--preview</span></code> to generated a detailed log of the changes that a deployment performed.</p>
+</section>
+<section id="running-in-ci">
+<h2>Running in CI<a class="headerlink" href="#running-in-ci" title="Permalink to this headline"></a></h2>
+<p>Smokestack can decide whether to execute or preview your changes based on the Git branch when running in a CI pipeline.</p>
+<p>In your deployment directory, create <code class="docutils literal notranslate"><span class="pre">smokestack-ci.yml</span></code>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">branch_name_env</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">CIRCLE_BRANCH</span>
+
+<span class="nt">rules</span><span class="p">:</span>
+  <span class="p p-Indicator">-</span> <span class="nt">branch</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">main</span>
+    <span class="nt">preview</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+    <span class="nt">execute</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+
+<span class="nt">default</span><span class="p">:</span>
+  <span class="nt">preview</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+  <span class="nt">execute</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">branch_name_env</span></code> describes the name of the environment variable where the current branch name can be read. This name will depend on your CI providers. In CircleCI, for example, the branch name is recorded in <code class="docutils literal notranslate"><span class="pre">CIRCLE_BRANCH</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">rules</span></code> describes what to do for each branch.</p>
+<p><code class="docutils literal notranslate"><span class="pre">default</span></code> describes what to do if none of the above rules matched the current branch.</p>
+</section>
+<section id="logging">
+<h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline"></a></h2>
+<p>To emit debug logs, pass <code class="docutils literal notranslate"><span class="pre">--log-level</span> <span class="pre">debug</span></code>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="usage/cli.html" class="btn btn-neutral float-left" title="Register Stack Sets in the CLI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Cariad Eccleston.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

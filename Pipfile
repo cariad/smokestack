@@ -5,8 +5,9 @@ name = "pypi"
 
 [packages]
 ansiscape = "~=1.0"
-boto3 = "~=1.18"
-cfp = "==1.0.0a3"
+boto3 = "~=1.20"
+cfp = "~=1.0"
+cline = "~=1.2"
 pyyaml = "~=6.0"
 stackdiff = "~=1.1"
 stackwhy = "~=1.0.1"
@@ -21,6 +22,8 @@ mypy = "*"
 pytest = "*"
 pytest-cov = "*"
 shellcheck-py = "*"
+sphinx = "*"
+sphinx-rtd-theme = "*"
 twine = "*"
 types-mock = "*"
 types-pyyaml = "*"
@@ -28,3 +31,8 @@ yamllint = "*"
 
 [requires]
 python_version = "3.10"
+
+[scripts]
+build = "./scripts/build.sh"
+lint = "./scripts/lint.sh"
+test = "./scripts/test.sh"

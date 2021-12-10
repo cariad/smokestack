@@ -1,90 +1,60 @@
-from abc import abstractproperty
+from abc import abstractmethod
 from pathlib import Path
-from sys import stdout
-from typing import IO, Union
+from typing import List, Type, Union
 
-from ansiscape import yellow
-from boto3.session import Session
+from cfp import StackParameters
 
-from smokestack.abc import StackABC
-from smokestack.change_set import ChangeSet, ChangeSetArgs
-from smokestack.parameters import StackParameters
-from smokestack.types import Capabilities, ChangeType
+from smokestack.types import Capabilities
 
 
-class Stack(StackABC):
-    def __init__(self, writer: IO[str] = stdout) -> None:
-        self.session = Session(region_name=self.region)
-        self.writer = writer
+class Stack:
+    """
+    An Amazon Web Services CloudFormation stack.
+    """
 
-        self.client = self.session.client(
-            "cloudformation",
-        )  # pyright: reportUnknownMemberType=false
-        self.writer.write(
-            f"Operating on stack {yellow(self.name)} in {yellow(self.region)}.\n"
-        )
-
-    @abstractproperty
+    @property
+    @abstractmethod
     def body(self) -> Union[str, Path]:
-        """Gets the template body or path to the template file."""
+        """
+        Gets the template body or path to the template file.
+        """
 
     @property
     def capabilities(self) -> Capabilities:
+        """
+        Gets the capabilities required to deploy this stack.
+        """
+
         return []
 
     @property
-    def change_type(self) -> ChangeType:
-        return "UPDATE" if self.exists else "CREATE"
-
-    def create_change_set(self) -> ChangeSet:
-        if isinstance(self.body, Path):
-            with open(self.body, "r") as f:
-                body = f.read()
-        else:
-            body = self.body
-
-        params = StackParameters()
-        self.parameters(params)
-
-        args = ChangeSetArgs(
-            capabilities=self.capabilities,
-            body=body,
-            change_type=self.change_type,
-            parameters=params.api_parameters,
-            session=self.session,
-            stack=self.name,
-            writer=self.writer,
-        )
-
-        return ChangeSet(args)
+    @abstractmethod
+    def name(self) -> str:
+        """
+        Gets the stack's name.
+        """
 
     @property
-    def exists(self) -> bool:
-        try:
-            self.client.describe_stacks(StackName=self.name)
-            return True
-        except self.client.exceptions.ClientError:
-            return False
+    def needs(self) -> List[Type["Stack"]]:
+        """
+        Gets the stacks that must be deployed before this one.
+        """
 
-    @abstractproperty
-    def name(self) -> str:
-        """Gets the stack name."""
+        return []
 
     def parameters(self, params: StackParameters) -> None:
         """
-        Adds any stack parameters.
+        Populates this stack's parameters.
 
-        For example, to reference a parameter value in Systems Manager Parameter
-        Store:
-
-        .. code-block:: python
-
-            from smokestack import Stack
-            from smokestack.parameters import FromParameterStore, StackParameters
-
-            class MyStack(Stack):
-                def parameters(self, params: StackParameters) -> None:
-                    sp.add("ParameterA", FromParameterStore("/cfp/example1"))
-                    sp.add("ParameterB", FromParameterStore("/cfp/example2"))
+        Arguments:
+            params: Stack parameters. Provided by CFP: https://cariad.github.io/cfp/
         """
-        return
+
+        return None
+
+    @property
+    @abstractmethod
+    def region(self) -> str:
+        """
+        Gets the Amazon Web Services region to deploy this stack into.
+        """
