@@ -49,7 +49,7 @@ class OperateTask(Task[OperateTaskArguments]):
             raise CannotMakeArguments("Must execute and/or preview.")
 
         return OperateTaskArguments(
-            log_level=args.get_string("log_level", "warning").upper(),
+            log_level=args.get_string("log_level", "CRITICAL").upper(),
             operation=op,
             stack_set=args.get_string("set"),
         )

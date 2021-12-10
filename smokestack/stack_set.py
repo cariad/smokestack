@@ -2,14 +2,14 @@ from abc import ABC, abstractmethod
 from logging import getLogger
 from multiprocessing import Queue
 from queue import Empty
-from typing import IO, List, Optional, Type, cast
+from typing import IO, Dict, List, Optional, Type
+from uuid import uuid4
 
 from ansiscape import yellow
 
 from smokestack.enums import StackStatus
 from smokestack.exceptions import SmokestackError
 from smokestack.operator import Operator
-from smokestack.protocols import StackProtocol
 from smokestack.stack import Stack
 from smokestack.types import Operation, OperationResult
 
@@ -28,12 +28,12 @@ class StackSet(ABC):
         self._last_write_was_result = False
         self._logger = getLogger("smokestack")
         self._out = out
-        self._wip: List[Stack] = []
+        self._wip: Dict[str, Stack] = {}
 
     def _add_to_inbox(self, stack_type: Type[Stack]) -> None:
         """Adds a stack type and all of its needs to the inbox."""
 
-        if self._get_listed(stack_type, self._inbox):
+        if self._is_in_inbox(stack_type):
             # If this has been added already then assume its needs have too.
             return
 
@@ -43,24 +43,21 @@ class StackSet(ABC):
         for need in stack.needs:
             self._add_to_inbox(need)
 
-    def _get_listed(
+    def _is_in_inbox(
         self,
-        stack_type: Type[StackProtocol],
-        src: List[Stack],
+        stack_type: Type[Stack],
     ) -> Optional[Stack]:
         """Gets the stack instance of the given type."""
 
-        for stack in src:
-            # A bit cheeky, but let's assume nothing else inherits from StackProtocol.
-            concrete_type = cast(Type[Stack], stack_type)
-            if self._is_stack_type(stack, concrete_type):
+        for stack in self._inbox:
+            if self._is_stack_type(stack, stack_type):
                 return stack
 
         return None
 
     def _get_needs_are_done(self, stack: Stack) -> bool:
         for needs_type in stack.needs:
-            if need := self._get_listed(needs_type, self._inbox):
+            if need := self._is_in_inbox(needs_type):
                 self._logger.debug(
                     "%s not ready: need %s is not done.",
                     stack.name,
@@ -77,9 +74,9 @@ class StackSet(ABC):
         return None
 
     def _get_status(self, stack: Stack) -> StackStatus:
-        if not self._get_listed(type(stack), self._inbox):
+        if not self._is_in_inbox(type(stack)):
             return StackStatus.DONE
-        if self._get_listed(type(stack), self._wip):
+        if stack in self._wip.values():
             return StackStatus.IN_PROGRESS
         if self._get_needs_are_done(stack):
             return StackStatus.READY
@@ -95,11 +92,6 @@ class StackSet(ABC):
         if not self._last_write_was_result:
             self._out.write("\n")
 
-        stack = self._get_listed(result.stack, self._inbox)
-
-        if not stack:
-            raise SmokestackError(f"{result.stack} not in inbox.")
-
         self._out.write(result.out.getvalue())
         self._out.write("\n")
         self._last_write_was_result = True
@@ -108,8 +100,16 @@ class StackSet(ABC):
             self._logger.warning("Background job raised: %s", result.exception)
             raise SmokestackError(result.exception)
 
-        self._remove_listed(result.stack, self._inbox)
-        self._remove_listed(result.stack, self._wip)
+        stack = self._wip[result.token]
+
+        del self._wip[result.token]
+
+        try:
+            self._inbox.remove(stack)
+        except ValueError:
+            raise SmokestackError(
+                f"{stack.name} was operated on, but not found in the work queue."
+            )
 
     @staticmethod
     def _is_stack_type(stack: Stack, stack_type: Type[Stack]) -> bool:
@@ -144,16 +144,20 @@ class StackSet(ABC):
             if ready := self._get_next_ready():
                 self._out.write(f"🌄 Starting {yellow(ready.name)}…\n")
                 self._last_write_was_result = False
-                self._wip.append(ready)
-                Operator(operation=op, queue=queue, stack=ready).start()
+
+                token = str(uuid4())
+                self._wip[token] = ready
+
+                operator = Operator(
+                    operation=op,
+                    queue=queue,
+                    stack=ready,
+                    token=token,
+                )
+
+                operator.start()
 
         self._out.write("🥳 Done!\n")
-
-    def _remove_listed(self, stack_type: Type[StackProtocol], src: List[Stack]) -> None:
-        if stack := self._get_listed(stack_type, src):
-            src.remove(stack)
-        else:
-            self._logger.warning("%s complete but not in %s.", stack_type, src)
 
     @property
     @abstractmethod

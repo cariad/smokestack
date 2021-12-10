@@ -31,10 +31,13 @@ def test_run() -> None:
 
     stack = NoNeedsStack()
 
+    token = "00000000"
+
     operator = Operator(
         operation=operation,
         queue=queue,
         stack=stack,
+        token=token,
     )
 
     with patch("smokestack.operator.ChangeSet", return_value=cs) as cs_cls:
@@ -45,5 +48,5 @@ def test_run() -> None:
     preview.assert_called_once_with()
     execute.assert_called_once_with()
 
-    expect = OperationResult(operation=operation, out=ANY, stack=type(stack))
+    expect = OperationResult(out=ANY, token="00000000")
     put.assert_called_once_with(expect)

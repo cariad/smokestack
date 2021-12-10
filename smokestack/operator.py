@@ -17,11 +17,13 @@ class Operator(Process):
         operation: Operation,
         queue: "Queue[OperationResult]",
         stack: StackProtocol,
+        token: str,
     ) -> None:
         super().__init__()
-        self._stack = stack
-        self._queue = queue
         self._operation = operation
+        self._queue = queue
+        self._stack = stack
+        self._token = token
 
     def run(self) -> None:
         logger = getLogger("smokestack")
@@ -53,10 +55,9 @@ class Operator(Process):
             exception = ex
 
         result = OperationResult(
-            operation=self._operation,
-            out=out,
             exception=str(exception) if exception else None,
-            stack=type(self._stack),
+            out=out,
+            token=self._token,
         )
 
         self._queue.put(result)

@@ -1,10 +1,11 @@
 from io import StringIO
 from queue import Empty
+from typing import Optional
 
 from mock import ANY, Mock, patch
 from pytest import fixture, raises
 
-from smokestack import StackSet
+from smokestack import Stack, StackSet
 from smokestack.enums import StackStatus
 from smokestack.exceptions import SmokestackError
 from smokestack.types import Operation, OperationResult
@@ -48,12 +49,23 @@ def test_execute(stack_set: MockStackSet) -> None:
     operator = Mock()
     operator.start = patched_start
 
+    stack: Optional[Stack] = None
+    token: Optional[str] = None
+
     with patch("smokestack.stack_set.Operator", return_value=operator) as op_cls:
         stack_set.execute(operation)
-        stack = stack_set._wip[0]
+
+        assert len(stack_set._wip) == 1
+
+        for token in stack_set._wip:
+            stack = stack_set._wip[token]
+
+        assert token
         assert isinstance(stack, NoNeedsStack)
 
-    op_cls.assert_called_once_with(operation=operation, queue=ANY, stack=stack)
+    op_cls.assert_called_once_with(
+        operation=operation, queue=ANY, stack=stack, token=token
+    )
 
 
 def test_get_needs_are_done__no_needs(stack_set: MockStackSet) -> None:
@@ -75,7 +87,11 @@ def test_get_next_ready__no_needs(stack_set: MockStackSet) -> None:
 
 def test_get_next_ready__none(stack_set: MockStackSet) -> None:
     stack_set._add_to_inbox(WithNeedsStack)
-    stack_set._wip.append(NoNeedsStack())
+
+    stack = stack_set._inbox[1]
+    assert isinstance(stack, NoNeedsStack)
+    stack_set._wip["000000"] = stack
+
     assert stack_set._get_next_ready() is None
 
 
@@ -91,20 +107,22 @@ def test_get_status__done(stack_set: MockStackSet) -> None:
 def test_get_status__in_progress(stack_set: MockStackSet) -> None:
     stack_set._add_to_inbox(NoNeedsStack)
     stack = NoNeedsStack()
-    stack_set._wip.append(stack)
+    stack_set._wip["000000"] = stack
     assert stack_set._get_status(stack) is StackStatus.IN_PROGRESS
 
 
 def test_get_status__parent_with_need_in_progress(stack_set: MockStackSet) -> None:
     stack_set._add_to_inbox(WithNeedsStack)
-    stack_set._wip.append(NoNeedsStack())
+    stack_set._wip["000000"] = NoNeedsStack()
     assert stack_set._get_status(WithNeedsStack()) is StackStatus.QUEUED
 
 
 def test_get_status__need_in_progress(stack_set: MockStackSet) -> None:
     stack_set._add_to_inbox(WithNeedsStack)
-    stack_set._wip.append(NoNeedsStack())
-    assert stack_set._get_status(NoNeedsStack()) is StackStatus.IN_PROGRESS
+    stack = stack_set._inbox[1]
+    assert isinstance(stack, NoNeedsStack)
+    stack_set._wip["000000"] = stack
+    assert stack_set._get_status(stack) is StackStatus.IN_PROGRESS
 
 
 def test_get_status__queued(stack_set: MockStackSet) -> None:
@@ -120,15 +138,16 @@ def test_get_status__ready(stack_set: MockStackSet) -> None:
 
 
 def test_handle_queued_done(stack_set: MockStackSet, stack_set_out: StringIO) -> None:
-    stack_set._inbox = [NoNeedsStack()]
-    stack_set._wip = [NoNeedsStack()]
+    stack = NoNeedsStack()
+
+    stack_set._inbox = [stack]
+    stack_set._wip["000000"] = stack
 
     out = StringIO()
 
     result = OperationResult(
-        operation=Operation(),
         out=out,
-        stack=NoNeedsStack,
+        token="000000",
     )
 
     get = Mock(return_value=result)
@@ -148,7 +167,7 @@ def test_handle_queued_done(stack_set: MockStackSet, stack_set_out: StringIO) ->
 
 def test_handle_queued_done__no_result(stack_set: MockStackSet) -> None:
     stack_set._inbox = [NoNeedsStack()]
-    stack_set._wip = [NoNeedsStack()]
+    stack_set._wip["000000"] = NoNeedsStack()
 
     get = Mock(side_effect=Empty())
     queue = Mock()
@@ -167,15 +186,14 @@ def test_handle_queued_done__raises(
     stack_set_out: StringIO,
 ) -> None:
     stack_set._inbox = [NoNeedsStack()]
-    stack_set._wip = [NoNeedsStack()]
+    stack_set._wip["000000"] = NoNeedsStack()
 
     out = StringIO()
 
     result = OperationResult(
         exception="fire",
-        operation=Operation(),
         out=out,
-        stack=NoNeedsStack,
+        token="000000",
     )
 
     get = Mock(return_value=result)
