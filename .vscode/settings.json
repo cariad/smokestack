@@ -9,7 +9,8 @@
     "pyyaml",
     "tablefmt",
     "throttl",
-    "toctree"
+    "toctree",
+    "xlarge"
 ],
   "restructuredtext.confPath": "${workspaceFolder}/docsrc/source"
 }

@@ -1,81 +1,68 @@
-# The following environment variables are set in the CircleCI project:
-#
-#    PIPENV_VENV_IN_PROJECT: true
-
 version: 2.1
 
 orbs:
   codecov: codecov/codecov@3.0.0
 
 jobs:
-  cache:
-    docker:
-      - image: cimg/python:3.10.0
-    resource_class: medium
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-            - pipenv-{{ .Branch }}-
-            - pipenv-
-      - run: pipenv sync --dev
-      - save_cache:
-          key: pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-          paths:
-            - .venv
-
   lint_black:
     docker:
       - image: cimg/python:3.10.0
-    environment:
-    resource_class: medium
+    resource_class: xlarge
     steps:
       - checkout
       - restore_cache:
           keys:
-            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./lint-black.sh
+            - pipenv-{{ checksum "Pipfile.lock" }}
+            - pipenv-
+      - run: pipenv sync --dev
+      - run: pipenv run ./scripts/lint-black.sh
+      - save_cache:
+          key: pipenv-{{ checksum "Pipfile.lock" }}
+          paths:
+            - .venv
 
   lint_flake8:
     docker:
       - image: cimg/python:3.10.0
-    environment:
-    resource_class: medium
+    resource_class: xlarge
     steps:
       - checkout
       - restore_cache:
           keys:
-            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./lint-flake8.sh
+            - pipenv-{{ checksum "Pipfile.lock" }}
+            - pipenv-
+      - run: pipenv sync --dev
+      - run: pipenv run ./scripts/lint-flake8.sh
 
   lint_isort:
     docker:
       - image: cimg/python:3.10.0
-    environment:
-    resource_class: medium
+    resource_class: xlarge
     steps:
       - checkout
       - restore_cache:
           keys:
-            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./lint-isort.sh
+            - pipenv-{{ checksum "Pipfile.lock" }}
+            - pipenv-
+      - run: pipenv sync --dev
+      - run: pipenv run ./scripts/lint-isort.sh
 
   lint_package_types:
     docker:
       - image: cimg/python:3.10.0
-    environment:
-    resource_class: medium
+    resource_class: xlarge
     steps:
       - checkout
       - restore_cache:
           keys:
-            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+            - pipenv-{{ checksum "Pipfile.lock" }}
+            - pipenv-
       - restore_cache:
           keys:
             - mypy-package-{{ .Branch }}
             - mypy-package-main
-      - run: pipenv run ./lint-package-types.sh
+      - run: pipenv sync --dev
+      - run: pipenv run ./scripts/lint-package-types.sh
       - save_cache:
           key: mypy-package-{{ .Branch }}
           paths:
@@ -84,30 +71,32 @@ jobs:
   lint_shell:
     docker:
       - image: cimg/python:3.10.0
-    environment:
-    resource_class: medium
+    resource_class: xlarge
     steps:
       - checkout
       - restore_cache:
           keys:
-            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./lint-shell.sh
+            - pipenv-{{ checksum "Pipfile.lock" }}
+            - pipenv-
+      - run: pipenv sync --dev
+      - run: pipenv run ./scripts/lint-shell.sh
 
   lint_test_types:
     docker:
       - image: cimg/python:3.10.0
-    environment:
-    resource_class: medium
+    resource_class: xlarge
     steps:
       - checkout
       - restore_cache:
           keys:
-            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+            - pipenv-{{ checksum "Pipfile.lock" }}
+            - pipenv-
       - restore_cache:
           keys:
             - mypy-test-{{ .Branch }}
             - mypy-test-main
-      - run: pipenv run ./lint-test-types.sh
+      - run: pipenv sync --dev
+      - run: pipenv run ./scripts/lint-test-types.sh
       - save_cache:
           key: mypy-test-{{ .Branch }}
           paths:
@@ -116,40 +105,43 @@ jobs:
   lint_yaml:
     docker:
       - image: cimg/python:3.10.0
-    environment:
-    resource_class: medium
+    resource_class: xlarge
     steps:
       - checkout
       - restore_cache:
           keys:
-            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./lint-yaml.sh
+            - pipenv-{{ checksum "Pipfile.lock" }}
+            - pipenv-
+      - run: pipenv sync --dev
+      - run: pipenv run ./scripts/lint-yaml.sh
 
   test:
     docker:
       - image: cimg/python:3.10.0
-    environment:
-    resource_class: medium
+    resource_class: xlarge
     steps:
       - checkout
       - restore_cache:
           keys:
-            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./test.sh
+            - pipenv-{{ checksum "Pipfile.lock" }}
+            - pipenv-
+      - run: pipenv sync --dev
+      - run: pipenv run test
       - codecov/upload:
           file: coverage.xml
 
   build:
     docker:
       - image: cimg/python:3.10.0
-    environment:
-    resource_class: medium
+    resource_class: xlarge
     steps:
       - checkout
       - restore_cache:
           keys:
-            - pipenv-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-      - run: pipenv run ./build.sh
+            - pipenv-{{ checksum "Pipfile.lock" }}
+            - pipenv-
+      - run: pipenv sync --dev
+      - run: pipenv run build
       - run: pip install dist/*
       - run: if [[ -z "${CIRCLE_TAG}" ]]; then circleci-agent step halt; fi
       - run: pipenv run twine upload dist/*
@@ -157,42 +149,51 @@ jobs:
 workflows:
   default:
     jobs:
-      - cache:
-          filters:
-            branches:
-              only: /.*/
-            tags:
-              only: /.*/
       - lint_black:
-          requires:
-            - cache
+          context:
+            - python
+
       - lint_flake8:
-          requires:
-            - cache
+          context:
+            - python
+
       - lint_isort:
-          requires:
-            - cache
+          context:
+            - python
+
       - lint_package_types:
-          requires:
-            - cache
+          context:
+            - python
+
       - lint_shell:
-          requires:
-            - cache
-      - lint_test_types:
-          requires:
-            - cache
-      - lint_yaml:
-          requires:
-            - cache
-      - test:
+          context:
+            - python
           filters:
             branches:
               only: /.*/
             tags:
               only: /.*/
-          requires:
-            - cache
+
+      - lint_test_types:
+          context:
+            - python
+
+      - lint_yaml:
+          context:
+            - python
+
+      - test:
+          context:
+            - python
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              only: /.*/
+
       - build:
+          context:
+            - python
           filters:
             branches:
               only: /.*/
