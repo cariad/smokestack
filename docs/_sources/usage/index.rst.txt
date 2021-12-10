@@ -5,7 +5,7 @@ This section will walk you adding Smokestack to your own infrastructure-as-code 
 
 1. Describe your stacks.
 2. Describe your stack sets.
-3. :ref:`Prepare your project for command line execution<CLI>`
+3. :ref:`Prepare your project for command line execution<CLI Usage>`
 4. Run it!
 
 .. toctree::
@@ -14,3 +14,4 @@ This section will walk you adding Smokestack to your own infrastructure-as-code 
    self
    stacks
    stack-sets
+   cli

@@ -1,69 +1,84 @@
-CLI
-===
+CLI Usage
+=========
 
-Introduction
-------------
+The following examples assume your infrastructure-as-code project is a Python module named ``myproject``.
 
-**Smokestack** makes your project executable on the command line to easily preview and deploy stacks.
-
-To prepare your project for command line execution:
-
-1. Call :py:func:`smokestack.register` to make your stack sets available.
-2. Call :py:func:`smokestack.SmokestackCli.invoke_and_exit` to hand off execution to Smokestack.
-
-Example
+Preview
 -------
-
-In this example, in ``__main__.py__``:
-
-1. :py:func:`smokestack.register` is called three times to make three stack sets available
-2. :py:func:`smokestack.SmokestackCli.invoke_and_exit` is called to hand off execution to Smokestack
-
-.. code-block:: python
-
-   from smokestack import register, SmokestackCli
-
-   import myproject.stack_sets
-
-
-   def cli_entry() -> None:
-      register("app", myproject.stack_sets.ApplicationStackSet)
-      register("boot", myproject.stack_sets.BootstrapStackSet)
-      register("ci", myproject.stack_sets.ContinuousIntegrationStackSet)
-      SmokestackCli.invoke_and_exit()
-
-
-   if __name__ == "__main__":
-      cli_entry()
-
-CLI usage
----------
 
 To preview the changes that a stack set *would* deploy, pass the stack set key and ``--preview`` arguments:
 
 .. code-block:: console
 
-   python -m myproject app --preview
+    python -m myproject app --preview
 
+.. code-block:: text
 
-To deploy stacks, pass the stack set key and ``--execute`` arguments:
+    🌄 Starting DatabaseStack…
+    🌄 Starting LoggingStack…
+
+    🌞 Stack Database in us-east-1
+
+    No changes to apply.
+
+    🌞 Stack Logging in us-east-1
+
+    No changes to apply.
+
+    🌞 Stack Application in us-east-1
+
+    InstanceType = t2.large
+
+    Template changes:
+    Description: Application  =  Description: Application
+    Parameters:               =  Parameters:
+      InstanceType:           =    InstanceType:
+        Type: String          =      Type: String
+    Resources:                =  Resources:
+                              >    ExampleResource:
+                              >      Properties:
+                              >        InstanceType:
+                              >          Ref: InstanceType
+
+    Logical ID       Physical ID    Resource Type           Action
+    ExampleResource                 AWS::Example::Resource  Add
+
+    🥳 Done!
+
+Execute
+-------
+
+To deploy a stack set's changes, pass the stack set key and ``--execute`` arguments:
 
 .. code-block:: console
 
-   python -m myproject app --execute
+    python -m myproject app --preview
 
-``--execute`` and ``--preview`` can both be passed to generated a detailed log of the changes that a deployment performed:
+.. code-block:: text
 
-.. code-block:: console
+    🌄 Starting DatabaseStack…
+    🌄 Starting LoggingStack…
 
-   python -m myproject app --preview --execute
+    🌞 Stack Database in us-east-1
 
-Functions
----------
+    No changes to apply.
 
-.. autofunction:: smokestack.register
+    🌞 Stack Logging in us-east-1
 
-.. py:function:: smokestack.SmokestackCli.invoke_and_exit
+    No changes to apply.
 
-   Hands execution over to Smokestack. Any command line arguments will be interpreted,
-   operated on, then the script will terminate with an appropriate exit code.
+    🌞 Stack Application in us-east-1
+
+    InstanceType = t2.large
+
+    Executed successfully! 🎉
+
+    🥳 Done!
+
+
+Note that you can pass both ``--execute`` and ``--preview`` to generated a detailed log of the changes that a deployment performed.
+
+Logging
+-------
+
+To emit debug logs, pass ``--log-level debug``.

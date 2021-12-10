@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CLI &mdash; Smokestack  documentation</title>
+  <title>CLI Usage &mdash; Smokestack  documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -18,7 +18,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Stack Sets" href="usage/stack-sets.html" /> 
+    <link rel="prev" title="Register Stack Sets in the CLI" href="usage/cli.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -39,11 +39,10 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="index.html">Smokestack</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage/index.html">Getting Started</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">CLI</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#cli-usage">CLI usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">CLI Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#preview">Preview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#execute">Execute</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#logging">Logging</a></li>
 </ul>
 </li>
 </ul>
@@ -62,7 +61,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>CLI</li>
+      <li>CLI Usage</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/cli.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -72,79 +71,79 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="cli">
-<h1>CLI<a class="headerlink" href="#cli" title="Permalink to this headline"></a></h1>
-<section id="introduction">
-<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
-<p><strong>Smokestack</strong> makes your project executable on the command line to easily preview and deploy stacks.</p>
-<p>To prepare your project for command line execution:</p>
-<ol class="arabic simple">
-<li><p>Call <a class="reference internal" href="#smokestack.register" title="smokestack.register"><code class="xref py py-func docutils literal notranslate"><span class="pre">smokestack.register()</span></code></a> to make your stack sets available.</p></li>
-<li><p>Call <a class="reference internal" href="#smokestack.SmokestackCli.invoke_and_exit" title="smokestack.SmokestackCli.invoke_and_exit"><code class="xref py py-func docutils literal notranslate"><span class="pre">smokestack.SmokestackCli.invoke_and_exit()</span></code></a> to hand off execution to Smokestack.</p></li>
-</ol>
-</section>
-<section id="example">
-<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline"></a></h2>
-<p>In this example, in <code class="docutils literal notranslate"><span class="pre">__main__.py__</span></code>:</p>
-<ol class="arabic simple">
-<li><p><a class="reference internal" href="#smokestack.register" title="smokestack.register"><code class="xref py py-func docutils literal notranslate"><span class="pre">smokestack.register()</span></code></a> is called three times to make three stack sets available</p></li>
-<li><p><a class="reference internal" href="#smokestack.SmokestackCli.invoke_and_exit" title="smokestack.SmokestackCli.invoke_and_exit"><code class="xref py py-func docutils literal notranslate"><span class="pre">smokestack.SmokestackCli.invoke_and_exit()</span></code></a> is called to hand off execution to Smokestack</p></li>
-</ol>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">smokestack</span> <span class="kn">import</span> <span class="n">register</span><span class="p">,</span> <span class="n">SmokestackCli</span>
-
-<span class="kn">import</span> <span class="nn">myproject.stack_sets</span>
-
-
-<span class="k">def</span> <span class="nf">cli_entry</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-   <span class="n">register</span><span class="p">(</span><span class="s2">&quot;app&quot;</span><span class="p">,</span> <span class="n">myproject</span><span class="o">.</span><span class="n">stack_sets</span><span class="o">.</span><span class="n">ApplicationStackSet</span><span class="p">)</span>
-   <span class="n">register</span><span class="p">(</span><span class="s2">&quot;boot&quot;</span><span class="p">,</span> <span class="n">myproject</span><span class="o">.</span><span class="n">stack_sets</span><span class="o">.</span><span class="n">BootstrapStackSet</span><span class="p">)</span>
-   <span class="n">register</span><span class="p">(</span><span class="s2">&quot;ci&quot;</span><span class="p">,</span> <span class="n">myproject</span><span class="o">.</span><span class="n">stack_sets</span><span class="o">.</span><span class="n">ContinuousIntegrationStackSet</span><span class="p">)</span>
-   <span class="n">SmokestackCli</span><span class="o">.</span><span class="n">invoke_and_exit</span><span class="p">()</span>
-
-
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-   <span class="n">cli_entry</span><span class="p">()</span>
-</pre></div>
-</div>
-</section>
-<section id="cli-usage">
-<h2>CLI usage<a class="headerlink" href="#cli-usage" title="Permalink to this headline"></a></h2>
+  <section id="cli-usage">
+<h1>CLI Usage<a class="headerlink" href="#cli-usage" title="Permalink to this headline"></a></h1>
+<p>The following examples assume your infrastructure-as-code project is a Python module named <code class="docutils literal notranslate"><span class="pre">myproject</span></code>.</p>
+<section id="preview">
+<h2>Preview<a class="headerlink" href="#preview" title="Permalink to this headline"></a></h2>
 <p>To preview the changes that a stack set <em>would</em> deploy, pass the stack set key and <code class="docutils literal notranslate"><span class="pre">--preview</span></code> arguments:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m myproject app --preview</span>
 </pre></div>
 </div>
-<p>To deploy stacks, pass the stack set key and <code class="docutils literal notranslate"><span class="pre">--execute</span></code> arguments:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m myproject app --execute</span>
-</pre></div>
-</div>
-<p><code class="docutils literal notranslate"><span class="pre">--execute</span></code> and <code class="docutils literal notranslate"><span class="pre">--preview</span></code> can both be passed to generated a detailed log of the changes that a deployment performed:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m myproject app --preview --execute</span>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>🌄 Starting DatabaseStack…
+🌄 Starting LoggingStack…
+
+🌞 Stack Database in us-east-1
+
+No changes to apply.
+
+🌞 Stack Logging in us-east-1
+
+No changes to apply.
+
+🌞 Stack Application in us-east-1
+
+InstanceType = t2.large
+
+Template changes:
+Description: Application  =  Description: Application
+Parameters:               =  Parameters:
+  InstanceType:           =    InstanceType:
+    Type: String          =      Type: String
+Resources:                =  Resources:
+                          &gt;    ExampleResource:
+                          &gt;      Properties:
+                          &gt;        InstanceType:
+                          &gt;          Ref: InstanceType
+
+Logical ID       Physical ID    Resource Type           Action
+ExampleResource                 AWS::Example::Resource  Add
+
+🥳 Done!
 </pre></div>
 </div>
 </section>
-<section id="functions">
-<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
-<dl class="py function">
-<dt class="sig sig-object py" id="smokestack.register">
-<span class="sig-prename descclassname"><span class="pre">smokestack.</span></span><span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stack_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="usage/stack-sets.html#smokestack.StackSet" title="smokestack.stack_set.StackSet"><span class="pre">smokestack.stack_set.StackSet</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#smokestack.register" title="Permalink to this definition"></a></dt>
-<dd><p>Registers a stack set to make it available via the command line.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>key</strong> (<em>str</em>) – Unique key to identify the stack set on the command line.</p></li>
-<li><p><strong>stack_set</strong> (<em>Type</em><em>[</em><a class="reference internal" href="usage/stack-sets.html#smokestack.StackSet" title="smokestack.StackSet"><em>StackSet</em></a><em>]</em>) – Stack set.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
+<section id="execute">
+<h2>Execute<a class="headerlink" href="#execute" title="Permalink to this headline"></a></h2>
+<p>To deploy a stack set’s changes, pass the stack set key and <code class="docutils literal notranslate"><span class="pre">--execute</span></code> arguments:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m myproject app --preview</span>
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>🌄 Starting DatabaseStack…
+🌄 Starting LoggingStack…
 
-<dl class="py function">
-<dt class="sig sig-object py" id="smokestack.SmokestackCli.invoke_and_exit">
-<span class="sig-prename descclassname"><span class="pre">smokestack.SmokestackCli.</span></span><span class="sig-name descname"><span class="pre">invoke_and_exit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#smokestack.SmokestackCli.invoke_and_exit" title="Permalink to this definition"></a></dt>
-<dd><p>Hands execution over to Smokestack. Any command line arguments will be interpreted,
-operated on, then the script will terminate with an appropriate exit code.</p>
-</dd></dl>
+🌞 Stack Database in us-east-1
 
+No changes to apply.
+
+🌞 Stack Logging in us-east-1
+
+No changes to apply.
+
+🌞 Stack Application in us-east-1
+
+InstanceType = t2.large
+
+Executed successfully! 🎉
+
+🥳 Done!
+</pre></div>
+</div>
+<p>Note that you can pass both <code class="docutils literal notranslate"><span class="pre">--execute</span></code> and <code class="docutils literal notranslate"><span class="pre">--preview</span></code> to generated a detailed log of the changes that a deployment performed.</p>
+</section>
+<section id="logging">
+<h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline"></a></h2>
+<p>To emit debug logs, pass <code class="docutils literal notranslate"><span class="pre">--log-level</span> <span class="pre">debug</span></code>.</p>
 </section>
 </section>
 
@@ -152,7 +151,7 @@ operated on, then the script will terminate with an appropriate exit code.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="usage/stack-sets.html" class="btn btn-neutral float-left" title="Stack Sets" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="usage/cli.html" class="btn btn-neutral float-left" title="Register Stack Sets in the CLI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

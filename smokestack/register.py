@@ -13,11 +13,10 @@ def register(key: str, stack_set: Type[StackSet]) -> None:
     """
     Registers a stack set to make it available via the command line.
 
-    :param key: Unique key to identify the stack set on the command line.
-    :type key: str
+    Arguments:
+        key: Unique key to identify the stack set on the command line.
 
-    :param stack_set: Stack set.
-    :type stack_set: Type[StackSet]
+        stack_set: Stack set.
     """
 
     _stack_sets.update({key: stack_set})

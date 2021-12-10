@@ -18,7 +18,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="CLI" href="../cli.html" />
+    <link rel="next" title="Register Stack Sets in the CLI" href="cli.html" />
     <link rel="prev" title="Stacks" href="stacks.html" /> 
 </head>
 
@@ -47,9 +47,10 @@
 <li class="toctree-l3"><a class="reference internal" href="#stackset-class"><code class="docutils literal notranslate"><span class="pre">StackSet</span></code> class</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">Register Stack Sets in the CLI</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">CLI Usage</a></li>
 </ul>
 
         </div>
@@ -83,38 +84,14 @@
 <p>Your project will contain a <a class="reference internal" href="#smokestack.StackSet" title="smokestack.StackSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">smokestack.StackSet</span></code></a> class for each stack set to be deployed.</p>
 <section id="describing-a-stack-set">
 <h2>Describing a stack set<a class="headerlink" href="#describing-a-stack-set" title="Permalink to this headline"></a></h2>
-</section>
-<section id="stackset-class">
-<h2><code class="docutils literal notranslate"><span class="pre">StackSet</span></code> class<a class="headerlink" href="#stackset-class" title="Permalink to this headline"></a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="smokestack.StackSet">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smokestack.</span></span><span class="sig-name descname"><span class="pre">StackSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">IO</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#smokestack.StackSet" title="Permalink to this definition"></a></dt>
-<dd><p>A set of stacks.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="smokestack.StackSet.execute">
-<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">smokestack.types.operation.Operation</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#smokestack.StackSet.execute" title="Permalink to this definition"></a></dt>
-<dd><p>Executes an operation on the stack set.</p>
-<dl class="simple">
-<dt>Arguments:</dt><dd><p>op: Operation.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="smokestack.StackSet.stacks">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stacks</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="stacks.html#smokestack.Stack" title="smokestack.stack.Stack"><span class="pre">smokestack.stack.Stack</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#smokestack.StackSet.stacks" title="Permalink to this definition"></a></dt>
-<dd><p>Gets the stacks in this set.</p>
-<p>In this example, the “Application” set includes an application, database
-and logging stack:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">smokestack</span> <span class="kn">import</span> <span class="n">StackSet</span>
+<p>Implement the <a class="reference internal" href="#smokestack.StackSet.stacks" title="smokestack.StackSet.stacks"><code class="xref py py-attr docutils literal notranslate"><span class="pre">smokestack.StackSet.stacks</span></code></a> property to return the stacks within this set.</p>
+<p>For example, this “Platform” stack set describes application, database and logging stacks:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">smokestack</span> <span class="kn">import</span> <span class="n">Stack</span><span class="p">,</span> <span class="n">StackSet</span>
 
 <span class="kn">import</span> <span class="nn">myproject.stacks</span>
 
 
-<span class="k">class</span> <span class="nc">ApplicationStackSet</span><span class="p">(</span><span class="n">StackSet</span><span class="p">):</span>
-
-    <span class="c1"># ...</span>
-
+<span class="k">class</span> <span class="nc">PlatformStackSet</span><span class="p">(</span><span class="n">StackSet</span><span class="p">):</span>
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">stacks</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Stack</span><span class="p">]]:</span>
         <span class="k">return</span> <span class="p">[</span>
@@ -124,8 +101,27 @@ and logging stack:</p>
         <span class="p">]</span>
 </pre></div>
 </div>
-<p>Note that the deployment order is prescribed by each stack’s
-<a class="reference internal" href="stacks.html#smokestack.Stack.needs" title="smokestack.Stack.needs"><code class="xref py py-attr docutils literal notranslate"><span class="pre">smokestack.Stack.needs</span></code></a> property.</p>
+</section>
+<section id="stackset-class">
+<h2><code class="docutils literal notranslate"><span class="pre">StackSet</span></code> class<a class="headerlink" href="#stackset-class" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="smokestack.StackSet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smokestack.</span></span><span class="sig-name descname"><span class="pre">StackSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">IO</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#smokestack.StackSet" title="Permalink to this definition"></a></dt>
+<dd><p>A set of stacks.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smokestack.StackSet.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">operation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">smokestack.types.operation.Operation</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#smokestack.StackSet.execute" title="Permalink to this definition"></a></dt>
+<dd><p>Executes an operation on the stack set.</p>
+<dl class="simple">
+<dt>Arguments:</dt><dd><p>operation: Operation.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="smokestack.StackSet.stacks">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stacks</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="stacks.html#smokestack.Stack" title="smokestack.stack.Stack"><span class="pre">smokestack.stack.Stack</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#smokestack.StackSet.stacks" title="Permalink to this definition"></a></dt>
+<dd><p>Gets the stacks in this set.</p>
 </dd></dl>
 
 </dd></dl>
@@ -138,7 +134,7 @@ and logging stack:</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="stacks.html" class="btn btn-neutral float-left" title="Stacks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../cli.html" class="btn btn-neutral float-right" title="CLI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="cli.html" class="btn btn-neutral float-right" title="Register Stack Sets in the CLI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

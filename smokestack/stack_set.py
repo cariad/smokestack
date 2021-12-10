@@ -118,12 +118,12 @@ class StackSet(ABC):
             stack_type,
         )  # pyright: reportUnnecessaryIsInstance=false
 
-    def execute(self, op: Operation) -> None:
+    def execute(self, operation: Operation) -> None:
         """
         Executes an operation on the stack set.
 
         Arguments:
-            op: Operation.
+            operation: Operation.
         """
 
         self._logger.debug("Started executing: %s", self.__class__.__name__)
@@ -149,7 +149,7 @@ class StackSet(ABC):
                 self._wip[token] = ready
 
                 operator = Operator(
-                    operation=op,
+                    operation=operation,
                     queue=queue,
                     stack=ready,
                     token=token,
@@ -164,29 +164,4 @@ class StackSet(ABC):
     def stacks(self) -> List[Type[Stack]]:
         """
         Gets the stacks in this set.
-
-        In this example, the "Application" set includes an application, database
-        and logging stack:
-
-        .. code-block:: python
-
-            from smokestack import StackSet
-
-            import myproject.stacks
-
-
-            class ApplicationStackSet(StackSet):
-
-                # ...
-
-                @property
-                def stacks(self) -> List[Type[Stack]]:
-                    return [
-                        myproject.stacks.ApplicationStack,
-                        myproject.stacks.DatabaseStack,
-                        myproject.stacks.LoggingStack,
-                    ]
-
-        Note that the deployment order is prescribed by each stack's
-        :py:attr:`smokestack.Stack.needs` property.
         """
