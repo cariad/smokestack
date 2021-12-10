@@ -90,7 +90,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="smokestack.Stack.change_set">
-<span class="sig-name descname"><span class="pre">change_set</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">smokestack.change_set.ChangeSet</span></span></span><a class="headerlink" href="#smokestack.Stack.change_set" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">change_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_io.StringIO</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">smokestack.change_set.ChangeSet</span></span></span><a class="headerlink" href="#smokestack.Stack.change_set" title="Permalink to this definition"></a></dt>
 <dd><p>Creates and returns a change set.</p>
 </dd></dl>
 
@@ -133,37 +133,22 @@ stacks are deployed before deploying the application stack:</p>
 </div>
 </dd></dl>
 
-<dl class="py property">
-<dt class="sig sig-object py" id="smokestack.Stack.out">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">out</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">_io.StringIO</span></em><a class="headerlink" href="#smokestack.Stack.out" title="Permalink to this definition"></a></dt>
-<dd><p>Gets a stream of any string to be considered as standard output.</p>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="smokestack.Stack.parameters">
 <span class="sig-name descname"><span class="pre">parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">cfp.stack_parameters.StackParameters</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#smokestack.Stack.parameters" title="Permalink to this definition"></a></dt>
-<dd><p>Adds any stack parameters.</p>
-<p>No parameters will be added by default. Override this method only if
-your stack has parameters.</p>
-<p>For example, to reference a parameter value in Systems Manager Parameter
-Store:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">smokestack</span> <span class="kn">import</span> <span class="n">Stack</span>
-<span class="kn">from</span> <span class="nn">smokestack.parameters</span> <span class="kn">import</span> <span class="n">FromParameterStore</span><span class="p">,</span> <span class="n">StackParameters</span>
-
-<span class="k">class</span> <span class="nc">ApplicationStack</span><span class="p">(</span><span class="n">Stack</span><span class="p">):</span>
-
-    <span class="c1"># ...</span>
-
-    <span class="k">def</span> <span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">StackParameters</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">sp</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;InstanceType&quot;</span><span class="p">,</span> <span class="n">FromParameterStore</span><span class="p">(</span><span class="s2">&quot;/App/InstanceType&quot;</span><span class="p">))</span>
-</pre></div>
-</div>
+<dd><p>Gets stack parameters</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="smokestack.Stack.region">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">region</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#smokestack.Stack.region" title="Permalink to this definition"></a></dt>
 <dd><p>Gets the Amazon Web Services region to deploy this stack into.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="smokestack.Stack.session">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">session</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">boto3.session.Session</span></em><a class="headerlink" href="#smokestack.Stack.session" title="Permalink to this definition"></a></dt>
+<dd><p>Gets this stack’s Boto3 session.</p>
 </dd></dl>
 
 </dd></dl>

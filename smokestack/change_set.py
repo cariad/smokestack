@@ -1,10 +1,10 @@
+from io import StringIO
 from time import time_ns
 from typing import Any, Optional
 
 from ansiscape import heavy
 from botocore.exceptions import WaiterError
 from stackdiff import StackDiff
-from stackwhy import StackWhy
 
 from smokestack.aws import endeavor
 from smokestack.exceptions import (
@@ -12,19 +12,24 @@ from smokestack.exceptions import (
     ChangeSetExecutionError,
     SmokestackError,
 )
-from smokestack.types import ChangeSetArguments
+from smokestack.protocols import StackProtocol
+from smokestack.types import ChangeType
+
+# from stackwhy import StackWhy
 
 
 class ChangeSet:
     """CloudFormation stack change set."""
 
-    def __init__(self, args: ChangeSetArguments) -> None:
-        self._args = args
+    def __init__(self, stack: StackProtocol, out: StringIO) -> None:
+        self._stack = stack
         self._change_set_arn: Optional[str] = None
+        self._change_type: ChangeType = "UPDATE" if stack.exists else "CREATE"
         self._executed = False
         self._has_changes: Optional[bool] = None
         self._has_rendered_no_changes = False
-        self._stack_arn = args.stack if args.stack.startswith("arn:") else None
+        self._out = out
+        # self._stack_arn = args.stack if args.stack.startswith("arn:") else None
         self._stack_diff: Optional[StackDiff] = None
 
     def __enter__(self) -> "ChangeSet":
@@ -38,35 +43,39 @@ class ChangeSet:
 
     def _handle_execution_failure(self) -> None:
         # Prefer the ARN if we have it:
-        stack = self._stack_arn or self._args.stack
-        sw = StackWhy(stack=stack, session=self._args.session)
-        sw.render(self._args.out)
-        raise ChangeSetExecutionError(stack_name=self._args.stack)
+        # stack = self._stack_arn or self._args.stack
+        # sw = StackWhy(stack=stack, session=self._args.session)
+        # sw.render(self._args.out)
+        raise ChangeSetExecutionError(stack_name=self._stack.name)
 
     def _try_create(self) -> None:
-        client = self._args.session.client("cloudformation")
+
+        body = self._stack.body
+        resolved_body = body if isinstance(body, str) else open(body, "r").read()
+
+        client = self._stack.session.client("cloudformation")
 
         try:
             response = client.create_change_set(
-                StackName=self._args.stack,
-                Capabilities=self._args.capabilities,
+                StackName=self._stack.name,
+                Capabilities=self._stack.capabilities,
                 ChangeSetName=f"t{time_ns()}",
-                ChangeSetType=self._args.change_type,
-                Parameters=self._args.parameters,
-                TemplateBody=self._args.body,
+                ChangeSetType=self._change_type,
+                Parameters=self._stack.stack_parameters.api_parameters,
+                TemplateBody=resolved_body,
             )
 
         except client.exceptions.InsufficientCapabilitiesException as ex:
             error = ex.response.get("Error", {})
             raise ChangeSetCreationError(
                 failure=error.get("Message", "insufficient capabilities"),
-                stack_name=self._args.stack,
+                stack_name=self._stack.name,
             )
 
         except client.exceptions.ClientError as ex:
             raise ChangeSetCreationError(
                 failure=str(ex),
-                stack_name=self._args.stack,
+                stack_name=self._stack.name,
             )
 
         self._change_set_arn = response["Id"]
@@ -77,10 +86,10 @@ class ChangeSet:
             # The change set wasn't created, so there's nothing to delete:
             return
 
-        client = self._args.session.client("cloudformation")
+        client = self._stack.session.client("cloudformation")
 
-        if self._args.change_type == "CREATE":
-            client.delete_stack(StackName=self._args.stack)
+        if self._change_type == "CREATE":
+            client.delete_stack(StackName=self._stack.name)
             return
 
         try:
@@ -91,11 +100,11 @@ class ChangeSet:
 
     def _try_execute(self) -> None:
         # pyright: reportUnknownMemberType=false
-        client = self._args.session.client("cloudformation")
+        client = self._stack.session.client("cloudformation")
         client.execute_change_set(ChangeSetName=self.change_set_arn)
 
     def _try_wait_for_creation(self) -> None:
-        client = self._args.session.client("cloudformation")
+        client = self._stack.session.client("cloudformation")
         waiter = client.get_waiter("change_set_create_complete")
 
         try:
@@ -110,16 +119,16 @@ class ChangeSet:
             raise
 
     def _try_wait_for_execute(self) -> None:
-        client = self._args.session.client("cloudformation")
+        client = self._stack.session.client("cloudformation")
 
         waiter = (
             client.get_waiter("stack_update_complete")
-            if self._args.change_type == "UPDATE"
+            if self._change_type == "UPDATE"
             else client.get_waiter("stack_create_complete")
         )
 
-        waiter.wait(StackName=self._args.stack)
-        self._args.out.write("\nExecuted successfully! 🎉\n")
+        waiter.wait(StackName=self._stack.name)
+        self._out.write("\nExecuted successfully! 🎉\n")
         self._executed = True
 
     @property
@@ -142,7 +151,7 @@ class ChangeSet:
         # Prevent an preview + execute run emitting "no changes" twice.
         if self._has_rendered_no_changes:
             return
-        self._args.out.write("\nNo changes to apply.\n")
+        self._out.write("\nNo changes to apply.\n")
         self._has_rendered_no_changes = True
 
     def preview(self) -> None:
@@ -150,11 +159,11 @@ class ChangeSet:
             self.render_no_changes()
             return
 
-        self._args.out.write("\n")
-        self._args.out.write(f"{heavy('Template changes:').encoded} \n")
-        self.visualizer.render_differences(self._args.out)
-        self._args.out.write("\n")
-        self.visualizer.render_changes(self._args.out)
+        self._out.write("\n")
+        self._out.write(f"{heavy('Template changes:').encoded} \n")
+        self.visualizer.render_differences(self._out)
+        self._out.write("\n")
+        self.visualizer.render_changes(self._out)
 
     @property
     def visualizer(self) -> StackDiff:
@@ -163,7 +172,7 @@ class ChangeSet:
                 raise SmokestackError("Cannot visualise changes before creation")
             self._stack_diff = StackDiff(
                 change=self.change_set_arn,
-                stack=self._args.stack,
-                session=self._args.session,
+                stack=self._stack.name,
+                session=self._stack.session,
             )
         return self._stack_diff

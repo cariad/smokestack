@@ -1,14 +1,17 @@
 from abc import abstractmethod
 from io import StringIO
+from logging import getLogger
 from pathlib import Path
 from typing import List, Optional, Type, Union
 
+from ansiscape import heavy, yellow
+from ansiscape.checks import should_emit_codes
 from boto3.session import Session
 from cfp import StackParameters
 
 from smokestack.change_set import ChangeSet
 from smokestack.protocols import StackProtocol
-from smokestack.types import Capabilities, ChangeSetArguments
+from smokestack.types import Capabilities
 
 
 class Stack(StackProtocol):
@@ -17,26 +20,21 @@ class Stack(StackProtocol):
     """
 
     def __init__(self, session: Optional[Session] = None) -> None:
+
+        self._logger = getLogger("smokestack")
+
+        # # A reference to "out" will be passed to the thread that creates and
+        # # operates on the change set. By anchoring the writer here, we'll have a
+        # # reference in the main thread that we can print to stdout later.
+        # self._out = StringIO()
+        # """
+        # String writer for anything to be considered as standard output.
+        # """
+
         self._session = session or Session(region_name=self.region)
-        self._stack_parameters: Optional[StackParameters] = None
+        self._stack_parameters = StackParameters()
 
-        # A reference to "out" will be passed to the thread that creates and
-        # operates on the change set. By anchoring the writer here, we'll have a
-        # reference in the main thread that we can print to stdout later.
-        self._out = StringIO()
-        """
-        String writer for anything to be considered as standard output.
-        """
-
-    @property
-    def _resolved_body(self) -> str:
-        """Gets the template body."""
-
-        if isinstance(self.body, str):
-            return self.body
-
-        with open(self.body, "r") as f:
-            return f.read()
+        self._logger.debug("Initialised %s.", self.__class__.__name__)
 
     @property
     @abstractmethod
@@ -55,23 +53,26 @@ class Stack(StackProtocol):
 
         return []
 
-    def change_set(self) -> ChangeSet:
+    def change_set(self, out: StringIO) -> ChangeSet:
         """Creates and returns a change set."""
 
-        self._stack_parameters = StackParameters()
-        self.parameters(self._stack_parameters)
+        name = yellow(self.name) if should_emit_codes else self.name
+        region = yellow(self.region) if should_emit_codes else self.region
+        line = f"🌞 Stack {name} in {region}"
+        line_fmt = heavy(line).encoded if should_emit_codes else line
+        out.write(line_fmt)
+        out.write("\n")
 
-        args = ChangeSetArguments(
-            capabilities=self.capabilities,
-            body=self._resolved_body,
-            change_type="UPDATE" if self.exists else "CREATE",
-            out=self._out,
-            parameters=self._stack_parameters.api_parameters,
-            session=self._session,
-            stack=self.name,
-        )
+        self._logger.debug("Populating parameters...")
+        self.parameters(self.stack_parameters)
 
-        return ChangeSet(args)
+        if self._stack_parameters.api_parameters:
+            heading = "Parameters:"
+            heading_fmt = heavy(heading) if should_emit_codes else heading
+            out.write(f"\n{heading_fmt}\n")
+            self._stack_parameters.render(out)
+
+        return ChangeSet(stack=self, out=out)
 
     @property
     def exists(self) -> bool:
@@ -123,38 +124,32 @@ class Stack(StackProtocol):
 
         return []
 
-    @property
-    def out(self) -> StringIO:
-        """
-        Gets a stream of any string to be considered as standard output.
-        """
+    # @property
+    # def out(self) -> StringIO:
+    #     """
+    #     Gets a stream of any string to be considered as standard output.
+    #     """
 
-        return self._out
+    #     return self._out
 
     def parameters(self, params: StackParameters) -> None:
         """
-        Adds any stack parameters.
-
-        No parameters will be added by default. Override this method only if
-        your stack has parameters.
-
-        For example, to reference a parameter value in Systems Manager Parameter
-        Store:
-
-        .. code-block:: python
-
-            from smokestack import Stack
-            from smokestack.parameters import FromParameterStore, StackParameters
-
-            class ApplicationStack(Stack):
-
-                # ...
-
-                def parameters(self, params: StackParameters) -> None:
-                    sp.add("InstanceType", FromParameterStore("/App/InstanceType"))
+        Gets stack parameters
         """
+
+        return None
 
     @property
     @abstractmethod
     def region(self) -> str:
         """Gets the Amazon Web Services region to deploy this stack into."""
+
+    @property
+    def session(self) -> Session:
+        """Gets this stack's Boto3 session."""
+
+        return self._session
+
+    @property
+    def stack_parameters(self) -> StackParameters:
+        return self._stack_parameters

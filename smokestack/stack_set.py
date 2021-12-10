@@ -4,8 +4,7 @@ from multiprocessing import Queue
 from queue import Empty
 from typing import IO, List, Optional, Type, cast
 
-from ansiscape import heavy, yellow
-from ansiscape.checks import should_emit_codes
+from ansiscape import yellow
 
 from smokestack.enums import StackStatus
 from smokestack.exceptions import SmokestackError
@@ -101,19 +100,8 @@ class StackSet(ABC):
         if not stack:
             raise SmokestackError(f"{result.stack} not in inbox.")
 
-        name = yellow(stack.name) if should_emit_codes else stack.name
-        region = yellow(stack.region) if should_emit_codes else stack.region
-        line = f"🌞 Stack {name} in {region}"
-        line_fmt = heavy(line).encoded if should_emit_codes else line
-        self._out.write(line_fmt)
+        self._out.write(result.out.getvalue())
         self._out.write("\n")
-
-        # pyright: reportPrivateUsage=false
-        if stack._stack_parameters:
-            heading = "Parameters:"
-            heading_fmt = heavy(heading) if should_emit_codes else heading
-            self._out.write(f"\n{heading_fmt}\n")
-            stack._stack_parameters.render(self._out)
 
         if result.exception:
             raise SmokestackError(result.exception)

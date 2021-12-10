@@ -1,6 +1,7 @@
 from logging import getLogger
 
 from mock import Mock
+from mock.mock import ANY
 
 from smokestack.operator import Operator
 from smokestack.types import Operation, OperationResult
@@ -41,10 +42,10 @@ def test_run() -> None:
 
     operator.run()
 
-    make_change_set.assert_called_once_with()
+    make_change_set.assert_called_once_with(out=ANY)
 
     preview.assert_called_once_with()
     execute.assert_called_once_with()
 
-    expect = OperationResult(operation=operation, stack=type(stack))
+    expect = OperationResult(operation=operation, out=ANY, stack=type(stack))
     put.assert_called_once_with(expect)

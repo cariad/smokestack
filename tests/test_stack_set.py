@@ -14,9 +14,13 @@ from tests.mocks import MockStackSet, NoNeedsStack, WithNeedsStack
 
 
 @fixture
-def stack_set() -> MockStackSet:
-    out = StringIO()
-    return MockStackSet(out)
+def stack_set_out() -> StringIO:
+    return StringIO()
+
+
+@fixture
+def stack_set(stack_set_out: StringIO) -> MockStackSet:
+    return MockStackSet(stack_set_out)
 
 
 def test_add_to_inbox__no_duplicates(stack_set: MockStackSet) -> None:
@@ -115,12 +119,15 @@ def test_get_status__ready(stack_set: MockStackSet) -> None:
     assert stack_set._get_status(stack) is StackStatus.READY
 
 
-def test_handle_queued_done(stack_set: MockStackSet) -> None:
+def test_handle_queued_done(stack_set: MockStackSet, stack_set_out: StringIO) -> None:
     stack_set._inbox = [NoNeedsStack()]
     stack_set._wip = [NoNeedsStack()]
 
+    out = StringIO()
+
     result = OperationResult(
         operation=Operation(),
+        out=out,
         stack=NoNeedsStack,
     )
 
@@ -134,6 +141,7 @@ def test_handle_queued_done(stack_set: MockStackSet) -> None:
 
     assert not stack_set._inbox
     assert not stack_set._wip
+    assert stack_set_out.getvalue() == "\n"
 
 
 def test_handle_queued_done__no_result(stack_set: MockStackSet) -> None:
@@ -152,13 +160,18 @@ def test_handle_queued_done__no_result(stack_set: MockStackSet) -> None:
     assert len(stack_set._wip) == 1
 
 
-def test_handle_queued_done__raises(stack_set: MockStackSet) -> None:
+def test_handle_queued_done__raises(
+    stack_set: MockStackSet, stack_set_out: StringIO,
+) -> None:
     stack_set._inbox = [NoNeedsStack()]
     stack_set._wip = [NoNeedsStack()]
+
+    out = StringIO()
 
     result = OperationResult(
         exception="fire",
         operation=Operation(),
+        out=out,
         stack=NoNeedsStack,
     )
 
@@ -170,6 +183,7 @@ def test_handle_queued_done__raises(stack_set: MockStackSet) -> None:
         stack_set._handle_queued_done(queue)
 
     assert str(ex.value) == "fire"
+    assert stack_set_out.getvalue() == "\n"
 
 
 def test_inbox__empty_by_default(stack_set: MockStackSet) -> None:

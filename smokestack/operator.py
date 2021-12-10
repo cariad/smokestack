@@ -1,3 +1,4 @@
+from io import StringIO
 from logging import getLogger
 from multiprocessing import Process, Queue
 from typing import Optional
@@ -24,8 +25,10 @@ class Operator(Process):
         logger.debug("Started operating on %s", self._stack.name)
         exception: Optional[Exception] = None
 
+        out = StringIO()
+
         try:
-            with self._stack.change_set() as change:
+            with self._stack.change_set(out=out) as change:
                 logger.debug("Created change set: %s", change)
 
                 if self._operation.preview:
@@ -40,6 +43,7 @@ class Operator(Process):
 
         result = OperationResult(
             operation=self._operation,
+            out=out,
             exception=str(exception) if exception else None,
             stack=type(self._stack),
         )
