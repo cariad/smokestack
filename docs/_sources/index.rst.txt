@@ -7,7 +7,19 @@ Smokestack
 - Renders beautiful execution previews.
 - Execute or preview in CI based on branch name.
 - Deploys stacks in parallel, with dependencies described per-stack.
-- Handles command line execution.
+- Makes your infrastructure-as-code deployable via the command line.
+
+Requirements
+------------
+
+Smokestack requires Python 3.8 or later.
+
+Installation
+------------
+
+.. code-block:: console
+
+   pip install smokestack
 
 Contents
 --------
@@ -16,7 +28,5 @@ Contents
    :maxdepth: 1
 
    self
-   getting-started
-   stack
-   stack-set
+   usage/index
    cli
