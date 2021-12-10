@@ -1,8 +1,9 @@
-from typing import TypedDict
+from typing import List, TypedDict
 
-from smokestack.ci.ci_dict import CiDict
+from smokestack.ci.rule_dict import RuleDict
 
 
 class ConfigurationDict(TypedDict):
     branch_name_env: str
-    ci: CiDict
+    default: RuleDict
+    rules: List[RuleDict]

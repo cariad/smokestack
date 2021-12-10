@@ -5,7 +5,6 @@ from typing import Optional, cast
 
 from yaml import safe_load
 
-from smokestack.ci.ci_dict import CiDict
 from smokestack.ci.configuration_dict import ConfigurationDict
 from smokestack.ci.operation_dict import OperationDict
 from smokestack.exceptions import ConfigurationError
@@ -28,13 +27,13 @@ def load(path: Optional[Path] = None) -> ConfigurationDict:
         raise ConfigurationError(path, "File not found.")
 
 
-def get_operation_dict(branch: str, ci: CiDict) -> OperationDict:
-    for rule in ci["rules"]:
+def get_operation_dict(branch: str, config: ConfigurationDict) -> OperationDict:
+    for rule in config["rules"]:
         if rule.get("branch", None) == branch:
             return rule
 
     logger.warning("No CI rule for branch: %s", branch)
-    return ci["default"]
+    return config["default"]
 
 
 def get_operation() -> Operation:
@@ -47,5 +46,5 @@ def get_operation() -> Operation:
             f'No branch name: {config["branch_name_env"]}',
         )
 
-    op_dict = get_operation_dict(branch, config["ci"])
+    op_dict = get_operation_dict(branch, config)
     return Operation(**op_dict)
