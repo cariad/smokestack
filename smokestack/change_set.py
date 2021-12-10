@@ -1,10 +1,14 @@
 from io import StringIO
+from logging import getLogger
 from time import time_ns
 from typing import Any, Optional
 
 from ansiscape import heavy
+from boto3.session import Session
 from botocore.exceptions import WaiterError
+from cfp.stack_parameters import StackParameters
 from stackdiff import StackDiff
+from stackwhy import StackWhy
 
 from smokestack.aws import endeavor
 from smokestack.exceptions import (
@@ -15,22 +19,50 @@ from smokestack.exceptions import (
 from smokestack.protocols import StackProtocol
 from smokestack.types import ChangeType
 
-# from stackwhy import StackWhy
-
 
 class ChangeSet:
-    """CloudFormation stack change set."""
+    """
+    A stack change set.
+    """
 
     def __init__(self, stack: StackProtocol, out: StringIO) -> None:
+        self._logger = getLogger("smokestack")
+        self._session = Session(region_name=stack.region)
+
+        exists = self.stack_exists(name=stack.name, session=self._session)
+
         self._stack = stack
         self._change_set_arn: Optional[str] = None
-        self._change_type: ChangeType = "UPDATE" if stack.exists else "CREATE"
+        self._change_type: ChangeType = "UPDATE" if exists else "CREATE"
         self._executed = False
         self._has_changes: Optional[bool] = None
         self._has_rendered_no_changes = False
         self._out = out
-        # self._stack_arn = args.stack if args.stack.startswith("arn:") else None
+
+        # We only need the stack's ARN when we're handling an execution failure.
+        # We'll gather the ARN when we create the change set then pass it to
+        # StackWhy if we need to render a boner.
+        self._stack_arn: Optional[str] = None
+        """
+        The stack's ARN (if it's known).
+        """
+
         self._stack_diff: Optional[StackDiff] = None
+
+    @staticmethod
+    def stack_exists(name: str, session: Session) -> bool:
+        """
+        Returns `True` if the stack exists, otherwise `False`.
+        """
+
+        # pyright: reportUnknownMemberType=false
+        client = session.client("cloudformation")
+
+        try:
+            client.describe_stacks(StackName=name)
+            return True
+        except client.exceptions.ClientError:
+            return False
 
     def __enter__(self) -> "ChangeSet":
         endeavor(self._try_create)
@@ -43,9 +75,10 @@ class ChangeSet:
 
     def _handle_execution_failure(self) -> None:
         # Prefer the ARN if we have it:
-        # stack = self._stack_arn or self._args.stack
-        # sw = StackWhy(stack=stack, session=self._args.session)
-        # sw.render(self._args.out)
+        stack_id = self._stack_arn or self._stack.name
+        self._logger.warning("Handling an execution failure on: %s", stack_id)
+        self._out.write("\n🔥 Execution failed:\n\n")
+        StackWhy(stack=stack_id, session=self._session).render(self._out)
         raise ChangeSetExecutionError(stack_name=self._stack.name)
 
     def _try_create(self) -> None:
@@ -53,7 +86,16 @@ class ChangeSet:
         body = self._stack.body
         resolved_body = body if isinstance(body, str) else open(body, "r").read()
 
-        client = self._stack.session.client("cloudformation")
+        client = self._session.client("cloudformation")
+
+        self._logger.debug("Populating parameters...")
+
+        stack_params = StackParameters()
+        self._stack.parameters(stack_params)
+
+        if stack_params.api_parameters:
+            self._out.write("\n")
+            stack_params.render(self._out)
 
         try:
             response = client.create_change_set(
@@ -61,7 +103,7 @@ class ChangeSet:
                 Capabilities=self._stack.capabilities,
                 ChangeSetName=f"t{time_ns()}",
                 ChangeSetType=self._change_type,
-                Parameters=self._stack.stack_parameters.api_parameters,
+                Parameters=stack_params.api_parameters,
                 TemplateBody=resolved_body,
             )
 
@@ -86,7 +128,7 @@ class ChangeSet:
             # The change set wasn't created, so there's nothing to delete:
             return
 
-        client = self._stack.session.client("cloudformation")
+        client = self._session.client("cloudformation")
 
         if self._change_type == "CREATE":
             client.delete_stack(StackName=self._stack.name)
@@ -100,11 +142,11 @@ class ChangeSet:
 
     def _try_execute(self) -> None:
         # pyright: reportUnknownMemberType=false
-        client = self._stack.session.client("cloudformation")
+        client = self._session.client("cloudformation")
         client.execute_change_set(ChangeSetName=self.change_set_arn)
 
     def _try_wait_for_creation(self) -> None:
-        client = self._stack.session.client("cloudformation")
+        client = self._session.client("cloudformation")
         waiter = client.get_waiter("change_set_create_complete")
 
         try:
@@ -119,7 +161,7 @@ class ChangeSet:
             raise
 
     def _try_wait_for_execute(self) -> None:
-        client = self._stack.session.client("cloudformation")
+        client = self._session.client("cloudformation")
 
         waiter = (
             client.get_waiter("stack_update_complete")
@@ -173,6 +215,6 @@ class ChangeSet:
             self._stack_diff = StackDiff(
                 change=self.change_set_arn,
                 stack=self._stack.name,
-                session=self._stack.session,
+                session=self._session,
             )
         return self._stack_diff

@@ -1,18 +1,17 @@
 from logging import getLogger
 
-from mock import Mock
-from mock.mock import ANY
+from mock import ANY, Mock
+from mock.mock import patch
 
 from smokestack.operator import Operator
 from smokestack.types import Operation, OperationResult
+from tests.mocks import NoNeedsStack
 
 getLogger("smokestack").setLevel("DEBUG")
 
 
 def test_run() -> None:
     operation = Operation(execute=True, preview=True)
-
-    writer = Mock()
 
     put = Mock()
 
@@ -22,17 +21,15 @@ def test_run() -> None:
     execute = Mock()
     preview = Mock()
 
-    change_set = Mock()
-    change_set.__enter__ = Mock(return_value=change_set)
-    change_set.__exit__ = Mock()
-    change_set.execute = execute
-    change_set.preview = preview
+    cs = Mock()
+    cs.__enter__ = Mock(return_value=cs)
+    cs.__exit__ = Mock()
+    cs.execute = execute
+    cs.preview = preview
 
-    make_change_set = Mock(return_value=change_set)
+    cs_cls = Mock(return_value=cs)
 
-    stack = Mock()
-    stack.change_set = make_change_set
-    stack.out = writer
+    stack = NoNeedsStack()
 
     operator = Operator(
         operation=operation,
@@ -40,9 +37,10 @@ def test_run() -> None:
         stack=stack,
     )
 
-    operator.run()
+    with patch("smokestack.operator.ChangeSet", return_value=cs) as cs_cls:
+        operator.run()
 
-    make_change_set.assert_called_once_with(out=ANY)
+    cs_cls.assert_called_once_with(stack=stack, out=ANY)
 
     preview.assert_called_once_with()
     execute.assert_called_once_with()

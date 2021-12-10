@@ -47,7 +47,7 @@ class SmokestackCli(ArgumentParserCli):
             "--log-level",
             help="log level",
             metavar="LEVEL",
-            default="WARNING",
+            default="CRITICAL",
         )
 
         return parser

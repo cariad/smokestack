@@ -13,7 +13,7 @@ from smokestack.types import Operation
 class OperateTaskArguments:
     operation: Operation
     stack_set: str
-    log_level: str = "WARNING"
+    log_level: str = "CRITICAL"
 
 
 class OperateTask(Task[OperateTaskArguments]):

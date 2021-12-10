@@ -102,11 +102,11 @@ class StackSet(ABC):
 
         self._out.write(result.out.getvalue())
         self._out.write("\n")
+        self._last_write_was_result = True
 
         if result.exception:
+            self._logger.warning("Background job raised: %s", result.exception)
             raise SmokestackError(result.exception)
-
-        self._last_write_was_result = True
 
         self._remove_listed(result.stack, self._inbox)
         self._remove_listed(result.stack, self._wip)

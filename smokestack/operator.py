@@ -3,7 +3,11 @@ from logging import getLogger
 from multiprocessing import Process, Queue
 from typing import Optional
 
-from smokestack.stack import Stack
+from ansiscape import heavy, yellow
+from ansiscape.checks import should_emit_codes
+
+from smokestack.change_set import ChangeSet
+from smokestack.protocols.stack_protocol import StackProtocol
 from smokestack.types import Operation, OperationResult
 
 
@@ -12,7 +16,7 @@ class Operator(Process):
         self,
         operation: Operation,
         queue: "Queue[OperationResult]",
-        stack: Stack,
+        stack: StackProtocol,
     ) -> None:
         super().__init__()
         self._stack = stack
@@ -27,8 +31,15 @@ class Operator(Process):
 
         out = StringIO()
 
+        name = yellow(self._stack.name) if should_emit_codes else self._stack.name
+        region = yellow(self._stack.region) if should_emit_codes else self._stack.region
+        line = f"🌞 Stack {name} in {region}"
+        line_fmt = heavy(line).encoded if should_emit_codes else line
+        out.write(line_fmt)
+        out.write("\n")
+
         try:
-            with self._stack.change_set(out=out) as change:
+            with ChangeSet(stack=self._stack, out=out) as change:
                 logger.debug("Created change set: %s", change)
 
                 if self._operation.preview:

@@ -135,13 +135,15 @@ def test_handle_queued_done(stack_set: MockStackSet, stack_set_out: StringIO) ->
     queue = Mock()
     queue.get = get
 
+    out.write("Operation render goes here.\n")
+
     stack_set._handle_queued_done(queue)
 
     get.assert_called_once_with(block=True, timeout=1)
 
     assert not stack_set._inbox
     assert not stack_set._wip
-    assert stack_set_out.getvalue() == "\n"
+    assert stack_set_out.getvalue() == "\nOperation render goes here.\n\n"
 
 
 def test_handle_queued_done__no_result(stack_set: MockStackSet) -> None:
@@ -161,7 +163,8 @@ def test_handle_queued_done__no_result(stack_set: MockStackSet) -> None:
 
 
 def test_handle_queued_done__raises(
-    stack_set: MockStackSet, stack_set_out: StringIO,
+    stack_set: MockStackSet,
+    stack_set_out: StringIO,
 ) -> None:
     stack_set._inbox = [NoNeedsStack()]
     stack_set._wip = [NoNeedsStack()]
@@ -179,11 +182,13 @@ def test_handle_queued_done__raises(
     queue = Mock()
     queue.get = get
 
+    out.write("Operation render goes here.\n")
+
     with raises(SmokestackError) as ex:
         stack_set._handle_queued_done(queue)
 
     assert str(ex.value) == "fire"
-    assert stack_set_out.getvalue() == "\n"
+    assert stack_set_out.getvalue() == "\nOperation render goes here.\n\n"
 
 
 def test_inbox__empty_by_default(stack_set: MockStackSet) -> None:

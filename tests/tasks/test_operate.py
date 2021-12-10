@@ -72,7 +72,7 @@ def test_make_args__ci() -> None:
     get_op.assert_called_once()
 
     assert actual == OperateTaskArguments(
-        log_level="WARNING",
+        log_level="CRITICAL",
         operation=op,
         stack_set="foo",
     )
@@ -103,7 +103,7 @@ def test_make_args__execute_and_preview() -> None:
     )
 
     assert OperateTask.make_args(args) == OperateTaskArguments(
-        log_level="WARNING",
+        log_level="CRITICAL",
         operation=Operation(execute=True, preview=True),
         stack_set="foo",
     )
