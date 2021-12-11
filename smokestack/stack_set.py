@@ -6,6 +6,7 @@ from typing import IO, Dict, List, Optional, Type
 from uuid import uuid4
 
 from ansiscape import yellow
+from ansiscape.checks import should_emit_codes
 
 from smokestack.enums import StackStatus
 from smokestack.exceptions import SmokestackError
@@ -131,6 +132,7 @@ class StackSet(ABC):
         for stack in self.stacks:
             self._add_to_inbox(stack)
 
+        color = should_emit_codes()
         queue: "Queue[OperationResult]" = Queue(3)
 
         while self._inbox:
@@ -142,7 +144,10 @@ class StackSet(ABC):
                 continue
 
             if ready := self._get_next_ready():
-                self._out.write(f"🌄 Starting {yellow(ready.name)}…\n")
+                name = yellow(ready.name) if color else ready.name
+                region = yellow(ready.region) if color else ready.region
+
+                self._out.write(f"🌄 Starting {name} in {region}…\n")
                 self._last_write_was_result = False
 
                 token = str(uuid4())

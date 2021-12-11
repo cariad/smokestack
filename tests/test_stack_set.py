@@ -40,7 +40,7 @@ def test_add_to_inbox__with_needs(stack_set: MockStackSet) -> None:
     assert len(stack_set._inbox) == 2
 
 
-def test_execute(stack_set: MockStackSet) -> None:
+def test_execute(stack_set: MockStackSet, stack_set_out: StringIO) -> None:
     operation = Operation(execute=False, preview=True)
 
     def patched_start() -> None:
@@ -64,7 +64,17 @@ def test_execute(stack_set: MockStackSet) -> None:
         assert isinstance(stack, NoNeedsStack)
 
     op_cls.assert_called_once_with(
-        operation=operation, queue=ANY, stack=stack, token=token
+        operation=operation,
+        queue=ANY,
+        stack=stack,
+        token=token,
+    )
+
+    assert (
+        stack_set_out.getvalue()
+        == """🌄 Starting NoNeeds in eu-west-1…
+🥳 Done!
+"""
     )
 
 
