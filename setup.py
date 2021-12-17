@@ -37,7 +37,7 @@ setup(
     install_requires=[
         "ansiscape ~=1.0",
         "boto3     ~=1.20",
-        "cfp       ~=1.0",
+        "cfp       ~=1.1",
         "cline     ~=1.2",
         "pyyaml    ~=6.0",
         "stackdiff ~=1.1",

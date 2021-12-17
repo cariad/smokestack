@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from logging import getLogger
 from multiprocessing import Queue
 from queue import Empty
+from sys import stdout
 from typing import IO, Dict, List, Optional, Type
 from uuid import uuid4
 
@@ -20,7 +21,7 @@ class StackSet(ABC):
     A set of stacks.
     """
 
-    def __init__(self, out: IO[str]) -> None:
+    def __init__(self, out: IO[str] = stdout) -> None:
         self._inbox: List[Stack] = []
         """
         Flat list of stacks waiting to be executed.
