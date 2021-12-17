@@ -6,7 +6,6 @@ Smokestack
 - Supports CloudFormation template files.
 - Supports any template generator that can emit template bodies as strings.
 - Renders beautiful execution previews.
-- Execute or preview in CI based on branch name.
 - Deploys stacks in parallel, with dependencies described per-stack.
 - Makes your infrastructure-as-code deployable via the command line.
 

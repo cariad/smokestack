@@ -3,7 +3,6 @@ from logging import getLogger
 
 from cline import CannotMakeArguments, CommandLineArguments, Task
 
-from smokestack.ci import get_operation
 from smokestack.exceptions import SmokestackError
 from smokestack.register import get_registered_stack_set
 from smokestack.types import Operation
@@ -43,7 +42,7 @@ class OperateTask(Task[OperateTaskArguments]):
         if ci and (execute or preview):
             raise CannotMakeArguments("CI must be the only operation.")
 
-        op = get_operation() if ci else Operation(execute=execute, preview=preview)
+        op = Operation(execute=execute, preview=preview)
 
         if not (op.execute or op.preview):
             raise CannotMakeArguments("Must execute and/or preview.")

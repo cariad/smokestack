@@ -56,43 +56,6 @@ def test_invoke__fail() -> None:
     assert exit_code == 1
 
 
-def test_make_args__ci() -> None:
-    args = CommandLineArguments(
-        {
-            "ci": True,
-            "set": "foo",
-        }
-    )
-
-    op = Operation(execute=True, preview=True)
-
-    with patch("smokestack.tasks.operate.get_operation", return_value=op) as get_op:
-        actual = OperateTask.make_args(args)
-
-    get_op.assert_called_once()
-
-    assert actual == OperateTaskArguments(
-        log_level="CRITICAL",
-        operation=op,
-        stack_set="foo",
-    )
-
-
-def test_make_args__ci_and_execute() -> None:
-    args = CommandLineArguments(
-        {
-            "ci": True,
-            "execute": True,
-            "set": "foo",
-        }
-    )
-
-    with raises(CannotMakeArguments) as ex:
-        OperateTask.make_args(args)
-
-    assert str(ex.value) == "CI must be the only operation."
-
-
 def test_make_args__execute_and_preview() -> None:
     args = CommandLineArguments(
         {
