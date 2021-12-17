@@ -49,7 +49,6 @@ setup(
     name="smokestack",
     packages=[
         "smokestack",
-        "smokestack.ci",
         "smokestack.enums",
         "smokestack.exceptions",
         "smokestack.tasks",
@@ -57,7 +56,6 @@ setup(
     ],
     package_data={
         "smokestack": ["py.typed"],
-        "smokestack.ci": ["py.typed"],
         "smokestack.enums": ["py.typed"],
         "smokestack.exceptions": ["py.typed"],
         "smokestack.tasks": ["py.typed"],

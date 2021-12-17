@@ -20,12 +20,6 @@ class SmokestackCli(ArgumentParserCli):
         parser.add_argument("set", help="Stack set", nargs="?")
 
         parser.add_argument(
-            "--ci",
-            action="store_true",
-            help='run configuration in "smokestack-ci.yml"',
-        )
-
-        parser.add_argument(
             "--execute",
             action="store_true",
             help="execute any changes",
