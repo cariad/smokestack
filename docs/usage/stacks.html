@@ -46,6 +46,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#capabilities">Capabilities</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dependencies">Dependencies</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#parameters">Parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#post-execution-actions">Post-execution actions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#stack-class"><code class="docutils literal notranslate"><span class="pre">Stack</span></code> class</a></li>
 </ul>
 </li>
@@ -160,6 +161,10 @@
 </div>
 <p>See the <a class="reference external" href="https://cariad.github.io/cfp">CFP</a> documentation for <code class="docutils literal notranslate"><span class="pre">StackParameters</span></code>  tips and tricks.</p>
 </section>
+<section id="post-execution-actions">
+<h2>Post-execution actions<a class="headerlink" href="#post-execution-actions" title="Permalink to this headline"></a></h2>
+<p>To perform some post-execution action (e.g. to copy files into an S3 bucket that your stack deployed) override the <a class="reference internal" href="#smokestack.Stack.post" title="smokestack.Stack.post"><code class="xref py py-func docutils literal notranslate"><span class="pre">smokestack.Stack.post()</span></code></a> function.</p>
+</section>
 <section id="stack-class">
 <h2><code class="docutils literal notranslate"><span class="pre">Stack</span></code> class<a class="headerlink" href="#stack-class" title="Permalink to this headline"></a></h2>
 <dl class="py class">
@@ -196,6 +201,16 @@
 <dd><p>Populates this stack’s parameters.</p>
 <dl class="simple">
 <dt>Arguments:</dt><dd><p>params: Stack parameters. Provided by CFP: <a class="reference external" href="https://cariad.github.io/cfp/">https://cariad.github.io/cfp/</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smokestack.Stack.post">
+<span class="sig-name descname"><span class="pre">post</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">operation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">smokestack.types.operation.Operation</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#smokestack.Stack.post" title="Permalink to this definition"></a></dt>
+<dd><p>Performs any post-execution actions.</p>
+<dl class="simple">
+<dt>Arguments:</dt><dd><p>operation: Operation.</p>
 </dd>
 </dl>
 </dd></dl>

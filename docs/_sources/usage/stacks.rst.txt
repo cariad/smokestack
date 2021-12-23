@@ -72,7 +72,7 @@ To describe any upstream stacks that must be deployed before this one, override 
             ]
 
 Parameters
-------------
+----------
 
 To describe any parameter values that your stack requires, override the :py:func:`smokestack.Stack.parameters` function. This will provide a `CFP <https://cariad.github.io/cfp>`_ ``StackParameters`` instance to add parameter values to.
 
@@ -88,6 +88,11 @@ To describe any parameter values that your stack requires, override the :py:func
 
 
 See the `CFP <https://cariad.github.io/cfp>`_ documentation for ``StackParameters``  tips and tricks.
+
+Post-execution actions
+----------------------
+
+To perform some post-execution action (e.g. to copy files into an S3 bucket that your stack deployed) override the :py:func:`smokestack.Stack.post` function.
 
 ``Stack`` class
 ---------------
