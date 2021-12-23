@@ -50,7 +50,7 @@ class Operator(Process):
                 if self._operation.execute:
                     change.execute()
 
-            self._stack.post(self._operation)
+            self._stack.post(self._operation, out)
 
         except Exception as ex:
             logger.exception("Change set operation failed.")

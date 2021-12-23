@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from pathlib import Path
-from typing import List, Type, Union
+from typing import IO, List, Type, Union
 
 from cfp import StackParameters
 
@@ -52,12 +52,13 @@ class Stack:
 
         return None
 
-    def post(self, operation: Operation) -> None:
+    def post(self, operation: Operation, out: IO[str]) -> None:
         """
         Performs any post-execution actions.
 
         Arguments:
             operation: Operation.
+            out: Output writer.
         """
 
         return
