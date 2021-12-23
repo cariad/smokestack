@@ -4,7 +4,7 @@ from typing import List, Type, Union
 
 from cfp import StackParameters
 
-from smokestack.types import Capabilities
+from smokestack.types import Capabilities, Operation
 
 
 class Stack:
@@ -51,6 +51,16 @@ class Stack:
         """
 
         return None
+
+    def post(self, operation: Operation) -> None:
+        """
+        Performs any post-execution actions.
+
+        Arguments:
+            operation: Operation.
+        """
+
+        return
 
     @property
     @abstractmethod
