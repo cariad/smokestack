@@ -134,15 +134,15 @@ class StackSet(ABC):
             self._add_to_inbox(stack)
 
         color = should_emit_codes()
-        queue: "Queue[OperationResult]" = Queue(3)
+        max_processes = 3
+        queue: "Queue[OperationResult]" = Queue(max_processes)
 
         while self._inbox:
 
             if self._wip:
                 self._handle_queued_done(queue)
-
-            if queue.full():
-                continue
+                if len(self._wip) >= max_processes:
+                    continue
 
             if ready := self._get_next_ready():
                 name = yellow(ready.name) if color else ready.name
